@@ -13,7 +13,7 @@ export function Navbar() {
         {/* Brand */}
         <button className="navbar-brand" onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}>
           <span className="brand-icon">✓</span>
-          <span className="brand-name">TaskFlow</span>
+          <span className="brand-name">Taskara</span>
         </button>
 
         {/* Desktop nav links */}

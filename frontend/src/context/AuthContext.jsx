@@ -13,7 +13,7 @@ export const AppAuthContext = createContext({
 
 const DEMO_USER = {
   name: 'Demo User',
-  email: 'demo@taskflow.app',
+  email: 'demo@taskara.app',
   picture: null,
   sub: 'demo|local',
 };

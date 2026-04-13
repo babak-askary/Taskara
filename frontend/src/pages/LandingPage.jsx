@@ -29,7 +29,7 @@ export function LandingPage() {
           <span className="hero-accent">Stay Organized</span>
         </h1>
         <p className="hero-subtitle">
-          TaskFlow helps you manage tasks, track progress, and collaborate with your team — all in one place.
+          Taskara helps you manage tasks, track progress, and collaborate with your team — all in one place.
         </p>
         <div className="hero-actions">
           <button className="btn btn-primary btn-lg" onClick={login}>

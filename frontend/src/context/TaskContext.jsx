@@ -241,7 +241,7 @@ export function TaskProvider({ children }) {
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('taskflow_tasks');
+      const stored = localStorage.getItem('taskara_tasks');
       if (stored) {
         dispatch({ type: 'LOAD_TASKS', payload: JSON.parse(stored) });
       } else {
@@ -254,7 +254,7 @@ export function TaskProvider({ children }) {
 
   // Persist to localStorage on change
   useEffect(() => {
-    localStorage.setItem('taskflow_tasks', JSON.stringify(state.tasks));
+    localStorage.setItem('taskara_tasks', JSON.stringify(state.tasks));
   }, [state.tasks]);
 
   // ── Action helpers ──

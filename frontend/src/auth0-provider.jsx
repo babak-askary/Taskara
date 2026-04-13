@@ -5,7 +5,13 @@ import { Auth0Bridge } from './components/Auth0Bridge.jsx';
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN;
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
-const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+const rawAudience = import.meta.env.VITE_AUTH0_AUDIENCE;
+
+// Ignore common placeholder values so login works when no API audience is configured.
+const audience =
+  rawAudience && !rawAudience.includes('your-api-identifier')
+    ? rawAudience
+    : undefined;
 
 // True when Auth0 credentials are present in .env
 export const isAuth0Configured = !!(domain && clientId);
