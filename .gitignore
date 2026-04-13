@@ -1,6 +1,29 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
-.DS_Store
+.env.*
+!.env.example
+
+# Build output
 dist/
 build/
+
+# Logs
 *.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
