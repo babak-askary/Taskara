@@ -1,27 +1,50 @@
-// Each function handles one auth action
+const userModel = require('../models/userModel');
 
+// Sync Auth0 user to our database on register
 async function register(req, res, next) {
   try {
-    // TODO: Implement user registration
-    res.status(501).json({ message: 'Register not yet implemented' });
+    const { email, name, picture } = req.body;
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await userModel.findOrCreate({
+      auth0Id,
+      email,
+      name: name || email,
+      avatarUrl: picture || null,
+    });
+
+    res.status(201).json(user);
   } catch (err) {
     next(err);
   }
 }
 
+// Sync Auth0 user to our database on login
 async function login(req, res, next) {
   try {
-    // TODO: Implement login via Auth0/Google Auth
-    res.status(501).json({ message: 'Login not yet implemented' });
+    const { email, name, picture } = req.body;
+    const auth0Id = req.auth.payload.sub;
+
+    const user = await userModel.findOrCreate({
+      auth0Id,
+      email,
+      name: name || email,
+      avatarUrl: picture || null,
+    });
+
+    res.json(user);
   } catch (err) {
     next(err);
   }
 }
 
+// Return the current user's profile from our database
 async function getProfile(req, res, next) {
   try {
-    // TODO: Return current user profile
-    res.status(501).json({ message: 'Get profile not yet implemented' });
+    if (!req.user.id) {
+      return res.status(404).json({ message: 'User not found in database. Please sync first.' });
+    }
+    res.json(req.user);
   } catch (err) {
     next(err);
   }
