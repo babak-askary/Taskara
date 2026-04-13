@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { AuthSetup } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -9,6 +10,8 @@ import TaskDetailPage from './pages/TaskDetailPage';
 
 function App() {
   return (
+    <>
+    <AuthSetup />
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
@@ -19,6 +22,7 @@ function App() {
         <Route path="tasks/:id" element={<TaskDetailPage />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

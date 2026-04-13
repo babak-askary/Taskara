@@ -5,11 +5,22 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach auth token to every request
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Token getter — set by AuthContext when Auth0 is ready
+let getAccessToken = null;
+
+export function setTokenGetter(fn) {
+  getAccessToken = fn;
+}
+
+// Attach Auth0 access token to every request
+apiClient.interceptors.request.use(async (config) => {
+  if (getAccessToken) {
+    try {
+      const token = await getAccessToken();
+      config.headers.Authorization = `Bearer ${token}`;
+    } catch (err) {
+      // User not logged in — send request without token
+    }
   }
   return config;
 });

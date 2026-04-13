@@ -1,15 +1,17 @@
-import { createContext, useContext, useState } from 'react';
+import { useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { setTokenGetter } from '../api/client';
 
-const AuthContext = createContext(null);
+// Connects Auth0 token to the API client.
+// Place this component inside Auth0Provider so it can call getAccessTokenSilently.
+export function AuthSetup() {
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  useEffect(() => {
+    if (isAuthenticated) {
+      setTokenGetter(() => getAccessTokenSilently());
+    }
+  }, [isAuthenticated, getAccessTokenSilently]);
 
-  const value = { user, setUser };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
+  return null;
 }
