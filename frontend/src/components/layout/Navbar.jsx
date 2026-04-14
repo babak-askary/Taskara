@@ -41,13 +41,13 @@ function Navbar() {
         ) : (
           <>
             <button className="btn btn-outline" onClick={() => loginWithRedirect()}>
-              Login
+              {uiConfig.loginButtonLabel}
             </button>
             <button
               className="btn btn-solid"
               onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}
             >
-              Sign Up
+              {uiConfig.signupButtonLabel}
             </button>
           </>
         )}
