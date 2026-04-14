@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const STORAGE_KEY = 'taskara.tasks';
@@ -33,6 +33,21 @@ function TasksPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    if (isFormOpen) {
+      previousFocusRef.current = document.activeElement;
+      const focusable = dialogRef.current?.querySelector(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+      );
+      focusable?.focus();
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isFormOpen]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -126,6 +141,40 @@ function TasksPage() {
     setIsFormOpen(false);
     setEditingTaskId(null);
     setFormData(EMPTY_FORM);
+  };
+
+  const handleDialogKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      closeForm();
+      return;
+    }
+
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusableElements = Array.from(
+      dialogRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+
+    if (focusableElements.length === 0) {
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+    } else if (document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
   };
 
   const handleSubmit = (event) => {
@@ -245,11 +294,19 @@ function TasksPage() {
 
       {isFormOpen ? (
         <div className="modal-overlay" role="presentation" onClick={closeForm}>
-          <article className="card-surface modal-panel modal-panel-enhanced" onClick={(event) => event.stopPropagation()}>
+          <article
+            ref={dialogRef}
+            className="card-surface modal-panel modal-panel-enhanced"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-editor-title"
+            onKeyDown={handleDialogKeyDown}
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="task-form-head">
               <div>
                 <p className="eyebrow">Task Editor</p>
-                <h2>{editingTaskId ? 'Edit Task' : 'New Task'}</h2>
+                <h2 id="task-editor-title">{editingTaskId ? 'Edit Task' : 'New Task'}</h2>
                 <p className="lead">Fill in details and save.</p>
               </div>
             </div>
@@ -268,7 +325,6 @@ function TasksPage() {
                     value={formData.title}
                     onChange={(event) => setFormData({ ...formData, title: event.target.value })}
                     placeholder="Task title"
-                    autoFocus
                   />
                 </label>
 
