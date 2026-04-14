@@ -4,13 +4,13 @@ const userModel = require('../models/userModel');
 async function register(req, res, next) {
   try {
     const { email, name, picture } = req.body;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.user.auth0_id;
 
     const user = await userModel.findOrCreate({
       auth0Id,
-      email,
-      name: name || email,
-      avatarUrl: picture || null,
+      email: email || req.user.email,
+      name: name || req.user.name || email,
+      avatarUrl: picture || req.user.avatar_url || null,
     });
 
     res.status(201).json(user);
@@ -23,13 +23,13 @@ async function register(req, res, next) {
 async function login(req, res, next) {
   try {
     const { email, name, picture } = req.body;
-    const auth0Id = req.auth.payload.sub;
+    const auth0Id = req.user.auth0_id;
 
     const user = await userModel.findOrCreate({
       auth0Id,
-      email,
-      name: name || email,
-      avatarUrl: picture || null,
+      email: email || req.user.email,
+      name: name || req.user.name || email,
+      avatarUrl: picture || req.user.avatar_url || null,
     });
 
     res.json(user);
