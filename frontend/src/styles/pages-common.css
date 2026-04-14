@@ -1,0 +1,28 @@
+.landing-page,
+.dashboard-page,
+.task-detail-page,
+.board-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.page-head,
+.task-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.page-head h1 {
+  font-size: 1.8rem;
+}
+
+.task-head {
+  padding: 1rem;
+}
+
+.task-head h1 {
+  font-size: 1.5rem;
+}

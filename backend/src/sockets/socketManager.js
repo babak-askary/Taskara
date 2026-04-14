@@ -3,9 +3,15 @@ const { Server } = require('socket.io');
 let io;
 
 function initializeSocket(server) {
+  const frontendUrl = process.env.FRONTEND_URL;
+
+  if (!frontendUrl) {
+    throw new Error('Missing FRONTEND_URL environment variable. Define it in backend/.env.');
+  }
+
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: frontendUrl,
     },
   });
 

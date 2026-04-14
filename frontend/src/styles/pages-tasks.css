@@ -1,0 +1,236 @@
+.task-card h3 {
+  font-size: 1rem;
+}
+
+.board-toolbar,
+.empty-board,
+.task-card,
+.dashboard-empty,
+.comment-item {
+  padding: 1rem;
+}
+
+.board-toolbar {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.board-toolbar-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.user-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.active-filter {
+  background: var(--accent-soft);
+  border-color: #bfd8ff;
+}
+
+.board-input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+}
+
+.board-input:focus {
+  outline: 2px solid #b8d5ff;
+  outline-offset: 1px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 28, 54, 0.4);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 40;
+}
+
+.modal-panel {
+  width: min(640px, 100%);
+  max-height: min(90vh, 780px);
+  overflow: auto;
+}
+
+.modal-panel-enhanced {
+  border-color: #c8d7f7;
+  border-width: 1px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 92% 14%, rgba(239, 179, 122, 0.18), transparent 30%),
+    radial-gradient(circle at 8% 10%, rgba(159, 194, 255, 0.18), transparent 28%),
+    #ffffff;
+  box-shadow: 0 24px 46px rgba(20, 34, 64, 0.24);
+}
+
+.task-form-head {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem;
+  margin: -0.2rem -0.2rem 0;
+  border: 1px solid #d8e2f6;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(159, 194, 255, 0.2), rgba(239, 179, 122, 0.18));
+}
+
+.task-form-head h2 {
+  margin-bottom: 0.2rem;
+}
+
+.task-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.task-helper-row {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.task-helper-chip {
+  border: 1px solid #cfdcf5;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(159, 194, 255, 0.18), rgba(239, 179, 122, 0.18));
+  padding: 0.25rem 0.58rem;
+  font-size: 0.82rem;
+  color: #3f5476;
+}
+
+.task-form-section {
+  border: 1px solid #dce4f4;
+  border-radius: 12px;
+  padding: 0.8rem;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.task-form label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.task-form-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.task-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.empty-board {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.empty-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(159, 194, 255, 0.3), rgba(239, 179, 122, 0.28));
+  color: #374151;
+}
+
+.task-list-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.task-card {
+  display: grid;
+  gap: 0.5rem;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 10px 20px rgba(16, 24, 40, 0.06);
+}
+
+.task-card-complete {
+  opacity: 0.8;
+}
+
+.task-card-subtitle,
+.task-card-desc {
+  color: var(--muted);
+}
+
+.task-creator {
+  font-size: 0.84rem;
+  color: #4f5f73;
+}
+
+.task-card-subtitle {
+  font-size: 0.9rem;
+}
+
+.task-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.status-chip {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f5f9ff;
+  font-size: 0.84rem;
+}
+
+.task-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.task-card-meta span {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.task-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.comment-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.comment-item small {
+  color: var(--muted);
+}

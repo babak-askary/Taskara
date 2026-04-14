@@ -1,0 +1,91 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f7faff;
+  --panel: #ffffff;
+  --text: #1f2a3d;
+  --muted: #5f6f87;
+  --border: #d8e5fb;
+  --accent: #2f7fd8;
+  --accent-soft: #eaf3ff;
+  --accent-warm: #f4b684;
+  --accent-cool: #a9cbfb;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 2px 4px rgba(24, 39, 68, 0.05), 0 10px 30px rgba(24, 39, 68, 0.06);
+}
+
+body {
+  font-family: 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 9% 8%, rgba(169, 203, 251, 0.35) 0%, transparent 32%),
+    radial-gradient(circle at 92% 7%, rgba(244, 182, 132, 0.3) 0%, transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+  min-height: 100vh;
+  line-height: 1.45;
+}
+
+::selection {
+  background: rgba(47, 127, 216, 0.2);
+  color: #173256;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lead {
+  color: var(--muted);
+}
+
+.fade-up {
+  animation: subtle-rise 220ms ease-out;
+}
+
+@keyframes subtle-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .task-card,
+  .nav-link,
+  .btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}

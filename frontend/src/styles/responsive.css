@@ -1,0 +1,49 @@
+@media (max-width: 920px) {
+  .dashboard-summary-grid,
+  .dashboard-panels,
+  .task-form-row,
+  .profile-grid,
+  .auth-layout,
+  .auth-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .board-toolbar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-shell,
+  .public-home-nav {
+    flex-wrap: wrap;
+  }
+
+  .nav-links,
+  .nav-actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .orb {
+    display: none;
+  }
+
+  .site-main {
+    padding: 0.75rem;
+  }
+
+  .page-head,
+  .task-head,
+  .task-form-head {
+    flex-direction: column;
+  }
+
+  .task-form-actions {
+    justify-content: stretch;
+  }
+
+  .task-form-actions .btn {
+    width: 100%;
+  }
+}

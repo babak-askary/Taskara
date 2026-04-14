@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { uiConfig } from '../../config/uiConfig';
 
 function Navbar() {
   const { isAuthenticated, loginWithRedirect, logout, user } = useAuth0();
@@ -9,29 +10,43 @@ function Navbar() {
   };
 
   return (
-    <nav style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '15px 30px',
-      backgroundColor: '#fff',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    }}>
-      <Link to="/" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-        Taskara
-      </Link>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+    <nav className="nav-shell">
+      <div className="nav-brand-row">
+        <Link to={isAuthenticated ? '/dashboard' : '/'} className="brand-lockup">
+          <span className="brand-badge" aria-hidden="true">T</span>
+          <div>
+            <p className="brand-name">{uiConfig.appName}</p>
+          </div>
+        </Link>
+      </div>
+
+      <div className="nav-links">
+        <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Dashboard
+        </NavLink>
+        <NavLink to="/tasks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Tasks
+        </NavLink>
+        <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Profile
+        </NavLink>
+      </div>
+
+      <div className="nav-actions">
         {isAuthenticated ? (
           <>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/tasks">Tasks</Link>
-            <span>{user.name}</span>
-            <button onClick={handleLogout}>Logout</button>
+            <span className="user-chip">{user?.name || 'Member'}</span>
+            <button className="btn btn-outline" onClick={handleLogout}>Logout</button>
           </>
         ) : (
           <>
-            <button onClick={() => loginWithRedirect()}>Login</button>
-            <button onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
+            <button className="btn btn-outline" onClick={() => loginWithRedirect()}>
+              Login
+            </button>
+            <button
+              className="btn btn-solid"
+              onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}
+            >
               Sign Up
             </button>
           </>

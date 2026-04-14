@@ -3,9 +3,11 @@ import Navbar from './Navbar';
 
 function Layout() {
   return (
-    <div>
+    <div className="site-shell">
+      <div className="orb orb-amber" aria-hidden="true" />
+      <div className="orb orb-teal" aria-hidden="true" />
       <Navbar />
-      <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main className="site-main">
         <Outlet />
       </main>
     </div>
