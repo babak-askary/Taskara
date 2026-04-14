@@ -32,12 +32,20 @@ function DashboardPage() {
     const map = new Map();
 
     tasks.forEach((task) => {
-      const name = task.creator?.name || 'Unknown';
-      map.set(name, (map.get(name) || 0) + 1);
+      const displayName = task.creator?.name || 'Unknown';
+      const creatorKey =
+        task.creator?.id ?? task.creator?.email ?? displayName;
+      const existing = map.get(creatorKey);
+
+      if (existing) {
+        existing.count += 1;
+        return;
+      }
+
+      map.set(creatorKey, { key: creatorKey, name: displayName, count: 1 });
     });
 
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
+    return Array.from(map.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [tasks]);
