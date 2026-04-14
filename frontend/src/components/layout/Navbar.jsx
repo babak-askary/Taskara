@@ -11,7 +11,7 @@ function Navbar() {
 
   return (
     <nav className="nav-shell">
-      <div className="nav-brand-row">
+      <div>
         <Link to={isAuthenticated ? '/dashboard' : '/'} className="brand-lockup">
           <span className="brand-badge" aria-hidden="true">T</span>
           <div>
