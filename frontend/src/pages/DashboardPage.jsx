@@ -1,19 +1,5 @@
 import { useMemo, useState } from 'react';
-
-const STORAGE_KEY = 'taskara.tasks';
-
-function loadTasks() {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
+import { loadTasks } from '../utils/taskStorage.js';
 
 function DashboardPage() {
   const [tasks] = useState(loadTasks);

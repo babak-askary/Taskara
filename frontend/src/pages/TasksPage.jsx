@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-
-const STORAGE_KEY = 'taskara.tasks';
+import { loadTasks, saveTasks } from '../utils/taskStorage.js';
 
 const EMPTY_FORM = {
   title: '',
@@ -10,19 +9,6 @@ const EMPTY_FORM = {
   priority: 'medium',
   dueDate: '',
 };
-
-function loadTasks() {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
 
 function TasksPage() {
   const { user } = useAuth0();
@@ -50,7 +36,7 @@ function TasksPage() {
   }, [isFormOpen]);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    saveTasks(tasks);
   }, [tasks]);
 
   const editingTask = useMemo(() => tasks.find((task) => task.id === editingTaskId), [tasks, editingTaskId]);
