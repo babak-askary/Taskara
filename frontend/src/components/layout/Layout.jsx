@@ -3,9 +3,9 @@ import Navbar from './Navbar';
 
 function Layout() {
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
-      <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main className="app-main">
         <Outlet />
       </main>
     </div>
