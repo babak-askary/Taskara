@@ -8,3 +8,4 @@ export const deleteTask = (id) => apiClient.delete(`/tasks/${id}`);
 export const searchTasks = (params) => apiClient.get('/tasks/search', { params });
 export const addComment = (taskId, data) => apiClient.post(`/tasks/${taskId}/comments`, data);
 export const getComments = (taskId) => apiClient.get(`/tasks/${taskId}/comments`);
+export const deleteComment = (taskId, commentId) => apiClient.delete(`/tasks/${taskId}/comments/${commentId}`);
