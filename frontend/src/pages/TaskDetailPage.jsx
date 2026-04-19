@@ -10,6 +10,7 @@ import {
   deleteComment,
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
+import { errorMessage } from '../api/client';
 
 const STATUSES = [
   { value: 'todo', label: 'To do' },
@@ -81,7 +82,7 @@ function TaskDetailPage() {
       .catch((err) => {
         if (cancelled) return;
         if (err.response?.status === 404) setNotFound(true);
-        else setError(err.response?.data?.message || 'Could not load task.');
+        else setError(errorMessage(err, 'Could not load task.'));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
 
@@ -114,8 +115,9 @@ function TaskDetailPage() {
       const { data } = await updateTask(id, fields);
       setTask((t) => ({ ...t, ...data }));
     } catch (err) {
+      console.error('[update task]', err);
       setTask(prev);
-      alert(err.response?.data?.message || 'Could not save change.');
+      alert(errorMessage(err, 'Could not save change.'));
     } finally {
       setSaving(false);
     }
@@ -144,8 +146,9 @@ function TaskDetailPage() {
     try {
       await deleteTask(id);
       navigate('/tasks');
-    } catch {
-      alert('Could not delete task.');
+    } catch (err) {
+      console.error('[delete task]', err);
+      alert(errorMessage(err, 'Could not delete task.'));
     }
   }
 
@@ -159,7 +162,8 @@ function TaskDetailPage() {
       setComments((prev) => [data, ...prev]);
       setCommentDraft('');
     } catch (err) {
-      alert(err.response?.data?.message || 'Could not post comment.');
+      console.error('[add comment]', err);
+      alert(errorMessage(err, 'Could not post comment.'));
     } finally {
       setPosting(false);
     }
@@ -171,9 +175,10 @@ function TaskDetailPage() {
     setComments((prev) => prev.filter((x) => x.id !== c.id));
     try {
       await deleteComment(id, c.id);
-    } catch {
+    } catch (err) {
+      console.error('[delete comment]', err);
       setComments(before);
-      alert('Could not delete comment.');
+      alert(errorMessage(err, 'Could not delete comment.'));
     }
   }
 

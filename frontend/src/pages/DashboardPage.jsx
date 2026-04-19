@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { getStats, getPerformance } from '../api/dashboardApi';
 import { getTasks } from '../api/taskApi';
 import { ask as askAI } from '../api/aiApi';
+import { errorMessage } from '../api/client';
 
 const SUGGESTIONS = [
   'What should I focus on today?',
@@ -77,7 +78,7 @@ function DashboardPage() {
         setTasks(t.data || []);
       } catch (err) {
         if (!cancelled) {
-          setLoadError(err.response?.data?.message || 'Could not load your dashboard.');
+          setLoadError(errorMessage(err, 'Could not load your dashboard.'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -123,7 +124,8 @@ function DashboardPage() {
       const { data } = await askAI(p);
       setAiAnswer(data);
     } catch (err) {
-      setAiError(err.response?.data?.message || 'Taskara AI is not available right now.');
+      console.error('[ai ask]', err);
+      setAiError(errorMessage(err, 'Taskara AI is not available right now.'));
     } finally {
       setAiPending(false);
     }
