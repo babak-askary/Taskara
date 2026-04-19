@@ -9,6 +9,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const { errorHandler } = require('./middleware/errorHandler');
 const { sanitizeBody } = require('./middleware/validateInput');
@@ -30,6 +31,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check (not rate-limited, not protected — used by monitors)
 app.get('/api/health', (req, res) => {
