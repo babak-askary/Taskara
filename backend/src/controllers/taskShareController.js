@@ -1,6 +1,7 @@
 const taskShareModel = require('../models/taskShareModel');
 const taskModel = require('../models/taskModel');
 const userModel = require('../models/userModel');
+const notificationService = require('../services/notificationService');
 
 const VALID_PERMISSIONS = ['view', 'edit'];
 
@@ -40,6 +41,10 @@ async function shareTask(req, res, next) {
       permission,
     });
 
+    // Notify the target user that a task was shared with them
+    const task = await taskModel.findById(taskId, req.user.id);
+    notificationService.notifyTaskShared(parseInt(targetUserId), task);
+
     res.status(201).json(share);
   } catch (err) {
     next(err);
@@ -60,6 +65,7 @@ async function unshareTask(req, res, next) {
     const removed = await taskShareModel.unshare(taskId, targetUserId);
     if (!removed) return res.status(404).json({ message: 'Share not found' });
 
+    notificationService.notifyTaskUnshared(targetUserId, taskId);
     res.status(204).send();
   } catch (err) {
     next(err);

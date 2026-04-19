@@ -1,5 +1,6 @@
 const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
+const notificationService = require('../services/notificationService');
 const { validateTaskInput } = require('../utils/validateTask');
 
 // POST /api/tasks — create a new task
@@ -86,6 +87,7 @@ async function updateTask(req, res, next) {
     if (!valid) return res.status(400).json({ errors });
 
     const updated = await taskModel.update(taskId, req.body);
+    notificationService.notifyTaskUpdate(updated);
     res.json(updated);
   } catch (err) {
     next(err);
@@ -103,6 +105,7 @@ async function deleteTask(req, res, next) {
     }
 
     await taskModel.remove(taskId);
+    notificationService.notifyTaskDeleted(taskId);
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -155,6 +158,7 @@ async function addComment(req, res, next) {
       content: content.trim(),
     });
 
+    notificationService.notifyNewComment(taskId, comment);
     res.status(201).json(comment);
   } catch (err) {
     next(err);
