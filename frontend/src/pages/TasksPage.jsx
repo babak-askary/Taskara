@@ -10,6 +10,7 @@ import {
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
 import { errorMessage } from '../api/client';
+import DueDatePicker from '../components/common/DueDatePicker';
 
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
@@ -59,6 +60,8 @@ function TasksPage() {
 
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingTitle, setPendingTitle] = useState('');
 
   // Debounce search
   useEffect(() => {
@@ -114,21 +117,39 @@ function TasksPage() {
     return { open, overdue, done, total: tasks.length };
   }, [tasks]);
 
-  async function handleQuickAdd(e) {
+  function handleQuickAdd(e) {
     e.preventDefault();
     const title = newTitle.trim();
     if (!title || adding) return;
+    // Open the date picker; actual creation happens in its callbacks.
+    setPendingTitle(title);
+    setPickerOpen(true);
+  }
+
+  async function createPendingTask(dueDateIso) {
+    if (adding || !pendingTitle) return;
     setAdding(true);
     try {
-      const res = await createTask({ title });
+      const payload = dueDateIso
+        ? { title: pendingTitle, due_date: dueDateIso }
+        : { title: pendingTitle };
+      const res = await createTask(payload);
       setTasks((prev) => [res.data, ...prev]);
       setNewTitle('');
+      setPendingTitle('');
+      setPickerOpen(false);
     } catch (err) {
       console.error('[create task]', err);
       alert(errorMessage(err, 'Could not create task.'));
     } finally {
       setAdding(false);
     }
+  }
+
+  function handlePickerCancel() {
+    if (adding) return;
+    setPickerOpen(false);
+    setPendingTitle('');
   }
 
   async function handleToggle(task) {
@@ -284,6 +305,14 @@ function TasksPage() {
         </div>
       </section>
 
+      <DueDatePicker
+        isOpen={pickerOpen}
+        taskTitle={pendingTitle}
+        onConfirm={(iso) => createPendingTask(iso)}
+        onSkip={() => createPendingTask(null)}
+        onClose={handlePickerCancel}
+      />
+
       <section className="tasks-list">
         {loading ? (
           <div className="tasks-skel">
@@ -374,16 +403,24 @@ function TaskRow({ task, onToggle, onDelete }) {
             {task.category_name}
           </span>
         )}
-        {task.due_date && (
-          <span
-            className={`task-due ${overdue ? 'is-overdue' : today ? 'is-today' : ''}`}
-          >
-            {new Date(task.due_date).toLocaleDateString(undefined, {
-              month: 'short',
-              day: 'numeric',
-            })}
-          </span>
-        )}
+        <span
+          className={`task-due ${
+            !task.due_date
+              ? 'is-none'
+              : overdue
+              ? 'is-overdue'
+              : today
+              ? 'is-today'
+              : ''
+          }`}
+        >
+          {task.due_date
+            ? new Date(task.due_date).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              })
+            : 'No date'}
+        </span>
       </div>
 
       <button
