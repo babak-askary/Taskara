@@ -1,10 +1,10 @@
 const pool = require('../config/db');
+const { buildUpdate } = require('../utils/sql');
+
+const UPDATABLE = ['name', 'avatar_url'];
 
 async function findByAuth0Id(auth0Id) {
-  const { rows } = await pool.query(
-    'SELECT * FROM users WHERE auth0_id = $1',
-    [auth0Id]
-  );
+  const { rows } = await pool.query('SELECT * FROM users WHERE auth0_id = $1', [auth0Id]);
   return rows[0] || null;
 }
 
@@ -17,10 +17,7 @@ async function findById(id) {
 }
 
 async function findByEmail(email) {
-  const { rows } = await pool.query(
-    'SELECT * FROM users WHERE email = $1',
-    [email]
-  );
+  const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   return rows[0] || null;
 }
 
@@ -35,49 +32,30 @@ async function create({ auth0Id, email, name, avatarUrl }) {
 }
 
 async function update(id, fields) {
-  const allowed = ['name', 'avatar_url'];
-  const sets = [];
-  const values = [];
-  let i = 1;
-
-  for (const key of allowed) {
-    if (fields[key] !== undefined) {
-      sets.push(`${key} = $${i}`);
-      values.push(fields[key]);
-      i++;
-    }
-  }
-
-  if (sets.length === 0) return findById(id);
-
-  sets.push(`updated_at = NOW()`);
-  values.push(id);
-
-  const { rows } = await pool.query(
-    `UPDATE users SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
-    values
-  );
+  const q = buildUpdate('users', id, fields, UPDATABLE);
+  if (!q) return findById(id);
+  const { rows } = await pool.query(q.text, q.values);
   return rows[0];
 }
 
-async function findAll({ search, limit = 20, offset = 0 }) {
-  const values = [];
-  let where = '';
-
+async function findAll({ search, limit = 20, offset = 0 } = {}) {
   if (search) {
-    where = 'WHERE name ILIKE $1 OR email ILIKE $1';
-    values.push(`%${search}%`);
+    const { rows } = await pool.query(
+      `SELECT id, email, name, avatar_url, created_at
+       FROM users
+       WHERE name ILIKE $1 OR email ILIKE $1
+       ORDER BY name ASC
+       LIMIT $2 OFFSET $3`,
+      [`%${search}%`, limit, offset]
+    );
+    return rows;
   }
-
-  values.push(limit, offset);
-  const limitIdx = values.length - 1;
-
   const { rows } = await pool.query(
     `SELECT id, email, name, avatar_url, created_at
-     FROM users ${where}
+     FROM users
      ORDER BY name ASC
-     LIMIT $${limitIdx} OFFSET $${limitIdx + 1}`,
-    values
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
   );
   return rows;
 }
