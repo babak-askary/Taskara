@@ -1,4 +1,5 @@
 const taskModel = require('../models/taskModel');
+const commentModel = require('../models/commentModel');
 const { validateTaskInput } = require('../utils/validateTask');
 
 // POST /api/tasks — create a new task
@@ -117,10 +118,71 @@ async function searchTasks(req, res, next) {
   }
 }
 
-// POST /api/tasks/:id/comments — TODO in Phase 5
+// POST /api/tasks/:id/comments — add a comment to a task
 async function addComment(req, res, next) {
   try {
-    res.status(501).json({ message: 'Comments not yet implemented (Phase 5)' });
+    const taskId = parseInt(req.params.id);
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ errors: ['content is required and must be a non-empty string'] });
+    }
+    if (content.length > 5000) {
+      return res.status(400).json({ errors: ['content must be 5000 characters or less'] });
+    }
+
+    // Must have access to the task (owner or shared)
+    const canAccess = await taskModel.hasAccess(taskId, req.user.id);
+    if (!canAccess) {
+      return res.status(403).json({ message: 'You do not have access to this task' });
+    }
+
+    const comment = await commentModel.create({
+      taskId,
+      userId: req.user.id,
+      content: content.trim(),
+    });
+
+    res.status(201).json(comment);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/tasks/:id/comments — list comments on a task
+async function getComments(req, res, next) {
+  try {
+    const taskId = parseInt(req.params.id);
+    const { limit, offset } = req.query;
+
+    const canAccess = await taskModel.hasAccess(taskId, req.user.id);
+    if (!canAccess) {
+      return res.status(403).json({ message: 'You do not have access to this task' });
+    }
+
+    const comments = await commentModel.findByTaskId(taskId, {
+      limit: limit ? parseInt(limit) : 100,
+      offset: offset ? parseInt(offset) : 0,
+    });
+    res.json(comments);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// DELETE /api/tasks/:id/comments/:commentId — delete a comment (author only)
+async function deleteComment(req, res, next) {
+  try {
+    const commentId = parseInt(req.params.commentId);
+    const comment = await commentModel.findById(commentId);
+
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+    if (comment.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Only the author can delete this comment' });
+    }
+
+    await commentModel.remove(commentId);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
@@ -143,5 +205,7 @@ module.exports = {
   deleteTask,
   searchTasks,
   addComment,
+  getComments,
+  deleteComment,
   addAttachment,
 };

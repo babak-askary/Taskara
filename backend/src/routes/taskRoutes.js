@@ -11,7 +11,9 @@ router.put('/:id', authenticate, taskController.updateTask);
 router.delete('/:id', authenticate, taskController.deleteTask);
 
 // Comments
+router.get('/:id/comments', authenticate, taskController.getComments);
 router.post('/:id/comments', authenticate, taskController.addComment);
+router.delete('/:id/comments/:commentId', authenticate, taskController.deleteComment);
 
 // Attachments
 router.post('/:id/attachments', authenticate, taskController.addAttachment);
