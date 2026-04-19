@@ -1,6 +1,8 @@
 const pool = require('../config/db');
+const { buildUpdate } = require('../utils/sql');
 
-// Create a new category for a user
+const UPDATABLE = ['name', 'color'];
+
 async function create({ name, color, userId }) {
   const { rows } = await pool.query(
     `INSERT INTO categories (name, color, user_id)
@@ -11,7 +13,6 @@ async function create({ name, color, userId }) {
   return rows[0];
 }
 
-// Fetch all categories belonging to a user
 async function findAllByUser(userId) {
   const { rows } = await pool.query(
     'SELECT * FROM categories WHERE user_id = $1 ORDER BY name ASC',
@@ -20,38 +21,18 @@ async function findAllByUser(userId) {
   return rows;
 }
 
-// Fetch a single category
 async function findById(id) {
   const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
   return rows[0] || null;
 }
 
-// Update a category (name and color only)
-async function update(id, { name, color }) {
-  const sets = [];
-  const values = [];
-  let i = 1;
-
-  if (name !== undefined) {
-    sets.push(`name = $${i++}`);
-    values.push(name);
-  }
-  if (color !== undefined) {
-    sets.push(`color = $${i++}`);
-    values.push(color);
-  }
-
-  if (sets.length === 0) return findById(id);
-
-  values.push(id);
-  const { rows } = await pool.query(
-    `UPDATE categories SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
-    values
-  );
+async function update(id, fields) {
+  const q = buildUpdate('categories', id, fields, UPDATABLE, { touchUpdatedAt: false });
+  if (!q) return findById(id);
+  const { rows } = await pool.query(q.text, q.values);
   return rows[0];
 }
 
-// Delete a category (tasks with this category get category_id = NULL via ON DELETE SET NULL)
 async function remove(id) {
   await pool.query('DELETE FROM categories WHERE id = $1', [id]);
 }

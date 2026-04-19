@@ -1,46 +1,53 @@
 const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
 const notificationService = require('../services/notificationService');
-const { validateTaskInput } = require('../utils/validateTask');
 
-// POST /api/tasks — create a new task
+const STATUSES = ['todo', 'in_progress', 'done'];
+const PRIORITIES = ['low', 'medium', 'high'];
+
+// Validate a task payload. Returns an array of error strings (empty = valid).
+// `partial` skips checks for fields that weren't sent (used for PUT).
+function validateTask(body, partial = false) {
+  const errors = [];
+  if (!partial || body.title !== undefined) {
+    if (!body.title || typeof body.title !== 'string' || !body.title.trim()) {
+      errors.push('title is required');
+    } else if (body.title.length > 255) {
+      errors.push('title must be 255 chars or less');
+    }
+  }
+  if (body.status && !STATUSES.includes(body.status)) {
+    errors.push(`status must be one of: ${STATUSES.join(', ')}`);
+  }
+  if (body.priority && !PRIORITIES.includes(body.priority)) {
+    errors.push(`priority must be one of: ${PRIORITIES.join(', ')}`);
+  }
+  if (body.due_date && isNaN(Date.parse(body.due_date))) {
+    errors.push('due_date must be a valid date');
+  }
+  return errors;
+}
+
 async function createTask(req, res, next) {
   try {
-    const { valid, errors } = validateTaskInput(req.body);
-    if (!valid) return res.status(400).json({ errors });
+    const errors = validateTask(req.body);
+    if (errors.length) return res.status(400).json({ errors });
 
-    const task = await taskModel.create({
+    const task = await taskModel.create(req.user.id, {
+      ...req.body,
       title: req.body.title.trim(),
-      description: req.body.description,
-      status: req.body.status,
-      priority: req.body.priority,
-      dueDate: req.body.due_date,
-      categoryId: req.body.category_id,
-      ownerId: req.user.id,
-      isRecurring: req.body.is_recurring,
-      recurrenceRule: req.body.recurrence_rule,
-      estimatedTime: req.body.estimated_time,
     });
-
     res.status(201).json(task);
   } catch (err) {
     next(err);
   }
 }
 
-// GET /api/tasks — list all tasks owned by or shared with the user
 async function getAllTasks(req, res, next) {
   try {
     const {
-      status,
-      priority,
-      category_id,
-      due_before,
-      due_after,
-      sort_by,
-      sort_order,
-      limit,
-      offset,
+      status, priority, category_id, due_before, due_after,
+      sort_by, sort_order, limit, offset,
     } = req.query;
 
     const tasks = await taskModel.findAll({
@@ -55,14 +62,12 @@ async function getAllTasks(req, res, next) {
       limit: limit ? parseInt(limit) : 50,
       offset: offset ? parseInt(offset) : 0,
     });
-
     res.json(tasks);
   } catch (err) {
     next(err);
   }
 }
 
-// GET /api/tasks/:id — get a single task
 async function getTaskById(req, res, next) {
   try {
     const task = await taskModel.findById(parseInt(req.params.id), req.user.id);
@@ -73,18 +78,14 @@ async function getTaskById(req, res, next) {
   }
 }
 
-// PUT /api/tasks/:id — update a task (owner or editor only)
 async function updateTask(req, res, next) {
   try {
     const taskId = parseInt(req.params.id);
-
     const canEdit = await taskModel.isOwnerOrEditor(taskId, req.user.id);
-    if (!canEdit) {
-      return res.status(403).json({ message: 'You do not have permission to edit this task' });
-    }
+    if (!canEdit) return res.status(403).json({ message: 'No permission to edit' });
 
-    const { valid, errors } = validateTaskInput(req.body, { partial: true });
-    if (!valid) return res.status(400).json({ errors });
+    const errors = validateTask(req.body, true);
+    if (errors.length) return res.status(400).json({ errors });
 
     const updated = await taskModel.update(taskId, req.body);
     notificationService.notifyTaskUpdate(updated);
@@ -94,16 +95,12 @@ async function updateTask(req, res, next) {
   }
 }
 
-// DELETE /api/tasks/:id — only the owner can delete
 async function deleteTask(req, res, next) {
   try {
     const taskId = parseInt(req.params.id);
-
-    const isOwner = await taskModel.isOwner(taskId, req.user.id);
-    if (!isOwner) {
-      return res.status(403).json({ message: 'Only the owner can delete a task' });
+    if (!(await taskModel.isOwner(taskId, req.user.id))) {
+      return res.status(403).json({ message: 'Only the owner can delete' });
     }
-
     await taskModel.remove(taskId);
     notificationService.notifyTaskDeleted(taskId);
     res.status(204).send();
@@ -112,11 +109,9 @@ async function deleteTask(req, res, next) {
   }
 }
 
-// GET /api/tasks/search?q=...&status=...&priority=...&category_id=...
 async function searchTasks(req, res, next) {
   try {
     const { q, status, priority, category_id, limit, offset } = req.query;
-
     const tasks = await taskModel.search({
       query: q,
       userId: req.user.id,
@@ -126,30 +121,26 @@ async function searchTasks(req, res, next) {
       limit: limit ? parseInt(limit) : 50,
       offset: offset ? parseInt(offset) : 0,
     });
-
     res.json(tasks);
   } catch (err) {
     next(err);
   }
 }
 
-// POST /api/tasks/:id/comments — add a comment to a task
 async function addComment(req, res, next) {
   try {
     const taskId = parseInt(req.params.id);
     const { content } = req.body;
 
     if (!content || typeof content !== 'string' || !content.trim()) {
-      return res.status(400).json({ errors: ['content is required and must be a non-empty string'] });
+      return res.status(400).json({ errors: ['content required'] });
     }
     if (content.length > 5000) {
-      return res.status(400).json({ errors: ['content must be 5000 characters or less'] });
+      return res.status(400).json({ errors: ['content must be 5000 chars or less'] });
     }
 
-    // Must have access to the task (owner or shared)
-    const canAccess = await taskModel.hasAccess(taskId, req.user.id);
-    if (!canAccess) {
-      return res.status(403).json({ message: 'You do not have access to this task' });
+    if (!(await taskModel.hasAccess(taskId, req.user.id))) {
+      return res.status(403).json({ message: 'No access to this task' });
     }
 
     const comment = await commentModel.create({
@@ -157,7 +148,6 @@ async function addComment(req, res, next) {
       userId: req.user.id,
       content: content.trim(),
     });
-
     notificationService.notifyNewComment(taskId, comment);
     res.status(201).json(comment);
   } catch (err) {
@@ -165,20 +155,15 @@ async function addComment(req, res, next) {
   }
 }
 
-// GET /api/tasks/:id/comments — list comments on a task
 async function getComments(req, res, next) {
   try {
     const taskId = parseInt(req.params.id);
-    const { limit, offset } = req.query;
-
-    const canAccess = await taskModel.hasAccess(taskId, req.user.id);
-    if (!canAccess) {
-      return res.status(403).json({ message: 'You do not have access to this task' });
+    if (!(await taskModel.hasAccess(taskId, req.user.id))) {
+      return res.status(403).json({ message: 'No access to this task' });
     }
-
     const comments = await commentModel.findByTaskId(taskId, {
-      limit: limit ? parseInt(limit) : 100,
-      offset: offset ? parseInt(offset) : 0,
+      limit: req.query.limit ? parseInt(req.query.limit) : 100,
+      offset: req.query.offset ? parseInt(req.query.offset) : 0,
     });
     res.json(comments);
   } catch (err) {
@@ -186,17 +171,14 @@ async function getComments(req, res, next) {
   }
 }
 
-// DELETE /api/tasks/:id/comments/:commentId — delete a comment (author only)
 async function deleteComment(req, res, next) {
   try {
     const commentId = parseInt(req.params.commentId);
     const comment = await commentModel.findById(commentId);
-
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
     if (comment.user_id !== req.user.id) {
-      return res.status(403).json({ message: 'Only the author can delete this comment' });
+      return res.status(403).json({ message: 'Only the author can delete' });
     }
-
     await commentModel.remove(commentId);
     res.status(204).send();
   } catch (err) {
@@ -204,24 +186,7 @@ async function deleteComment(req, res, next) {
   }
 }
 
-// POST /api/tasks/:id/attachments — TODO in Phase 10
-async function addAttachment(req, res, next) {
-  try {
-    res.status(501).json({ message: 'Attachments not yet implemented (Phase 10)' });
-  } catch (err) {
-    next(err);
-  }
-}
-
 module.exports = {
-  createTask,
-  getAllTasks,
-  getTaskById,
-  updateTask,
-  deleteTask,
-  searchTasks,
-  addComment,
-  getComments,
-  deleteComment,
-  addAttachment,
+  createTask, getAllTasks, getTaskById, updateTask, deleteTask,
+  searchTasks, addComment, getComments, deleteComment,
 };
