@@ -9,6 +9,7 @@ import {
   deleteTask,
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
+import { errorMessage } from '../api/client';
 
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
@@ -99,9 +100,7 @@ function TasksPage() {
     call
       .then((res) => { if (!cancelled) setTasks(res.data || []); })
       .catch((err) => {
-        if (!cancelled) {
-          setError(err.response?.data?.message || 'Could not load tasks.');
-        }
+        if (!cancelled) setError(errorMessage(err, 'Could not load tasks.'));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
 
@@ -125,7 +124,8 @@ function TasksPage() {
       setTasks((prev) => [res.data, ...prev]);
       setNewTitle('');
     } catch (err) {
-      alert(err.response?.data?.message || 'Could not create task.');
+      console.error('[create task]', err);
+      alert(errorMessage(err, 'Could not create task.'));
     } finally {
       setAdding(false);
     }
@@ -137,9 +137,10 @@ function TasksPage() {
     setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, status: next } : t)));
     try {
       await updateTask(task.id, { status: next });
-    } catch {
+    } catch (err) {
+      console.error('[update task]', err);
       setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, status: prev } : t)));
-      alert('Could not update task.');
+      alert(errorMessage(err, 'Could not update task.'));
     }
   }
 
@@ -149,9 +150,10 @@ function TasksPage() {
     setTasks((list) => list.filter((t) => t.id !== task.id));
     try {
       await deleteTask(task.id);
-    } catch {
+    } catch (err) {
+      console.error('[delete task]', err);
       setTasks(before);
-      alert('Could not delete task.');
+      alert(errorMessage(err, 'Could not delete task.'));
     }
   }
 
