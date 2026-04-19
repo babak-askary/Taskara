@@ -21,7 +21,4 @@ router.get('/:id/shares', authenticate, taskShareController.getSharedUsers);
 router.post('/:id/share', authenticate, taskShareController.shareTask);
 router.delete('/:id/share/:userId', authenticate, taskShareController.unshareTask);
 
-// Attachments
-router.post('/:id/attachments', authenticate, taskController.addAttachment);
-
 module.exports = router;
