@@ -198,6 +198,65 @@ async function hasAccess(taskId, userId) {
   return rows.length > 0;
 }
 
+// Full-text search + optional filters. Uses the tsvector search_vector column.
+async function search({
+  query,
+  userId,
+  status,
+  priority,
+  categoryId,
+  limit = 50,
+  offset = 0,
+}) {
+  const conditions = ['(t.owner_id = $1 OR ts.user_id = $1)'];
+  const values = [userId];
+  let i = 2;
+
+  let rankSelect = '0 AS rank';
+  if (query && query.trim()) {
+    conditions.push(
+      `(t.search_vector @@ plainto_tsquery('english', $${i}) OR t.title ILIKE $${i + 1} OR t.description ILIKE $${i + 1})`
+    );
+    rankSelect = `ts_rank(t.search_vector, plainto_tsquery('english', $${i})) AS rank`;
+    values.push(query.trim(), `%${query.trim()}%`);
+    i += 2;
+  }
+
+  if (status) {
+    conditions.push(`t.status = $${i++}`);
+    values.push(status);
+  }
+  if (priority) {
+    conditions.push(`t.priority = $${i++}`);
+    values.push(priority);
+  }
+  if (categoryId) {
+    conditions.push(`t.category_id = $${i++}`);
+    values.push(categoryId);
+  }
+
+  values.push(limit, offset);
+  const limitIdx = values.length - 1;
+
+  const { rows } = await pool.query(
+    `SELECT DISTINCT
+       t.*,
+       u.name  AS owner_name,
+       c.name  AS category_name,
+       c.color AS category_color,
+       ${rankSelect}
+     FROM tasks t
+     LEFT JOIN users u        ON u.id = t.owner_id
+     LEFT JOIN categories c   ON c.id = t.category_id
+     LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = $1
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY rank DESC, t.created_at DESC
+     LIMIT $${limitIdx} OFFSET $${limitIdx + 1}`,
+    values
+  );
+  return rows;
+}
+
 module.exports = {
   create,
   findById,
@@ -207,4 +266,5 @@ module.exports = {
   isOwner,
   isOwnerOrEditor,
   hasAccess,
+  search,
 };

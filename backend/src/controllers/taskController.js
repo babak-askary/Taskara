@@ -109,10 +109,22 @@ async function deleteTask(req, res, next) {
   }
 }
 
-// GET /api/tasks/search — TODO in Phase 7
+// GET /api/tasks/search?q=...&status=...&priority=...&category_id=...
 async function searchTasks(req, res, next) {
   try {
-    res.status(501).json({ message: 'Search not yet implemented (Phase 7)' });
+    const { q, status, priority, category_id, limit, offset } = req.query;
+
+    const tasks = await taskModel.search({
+      query: q,
+      userId: req.user.id,
+      status,
+      priority,
+      categoryId: category_id ? parseInt(category_id) : undefined,
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+    });
+
+    res.json(tasks);
   } catch (err) {
     next(err);
   }
