@@ -2,9 +2,9 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { getStats, getPerformance } from '../api/dashboardApi';
-import { getTasks } from '../api/taskApi';
+import { getTasks, searchTasks } from '../api/taskApi';
 import { ask as askAI } from '../api/aiApi';
-import { errorMessage } from '../api/client';
+import apiClient, { errorMessage } from '../api/client';
 
 const SUGGESTIONS = [
   'What should I focus on today?',
@@ -56,10 +56,22 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [taskMatches, setTaskMatches] = useState([]);
+  const [userMatches, setUserMatches] = useState([]);
+
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiAnswer, setAiAnswer] = useState(null);
   const [aiPending, setAiPending] = useState(false);
   const [aiError, setAiError] = useState(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -87,6 +99,50 @@ function DashboardPage() {
 
     return () => { cancelled = true; };
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!searchTerm) {
+      setTaskMatches([]);
+      setUserMatches([]);
+      setSearchError(null);
+      setSearching(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      setSearching(true);
+      setSearchError(null);
+      try {
+        const [taskRes, userRes] = await Promise.all([
+          searchTasks({ q: searchTerm, limit: 8 }),
+          apiClient.get('/users', { params: { search: searchTerm, limit: 8 } }),
+        ]);
+
+        if (cancelled) return;
+
+        const users = (userRes.data || []).filter((u) => {
+          if (!user?.email) return true;
+          return u.email !== user.email;
+        });
+
+        setTaskMatches(taskRes.data || []);
+        setUserMatches(users);
+      } catch (err) {
+        if (!cancelled) {
+          setSearchError(errorMessage(err, 'Search is unavailable right now.'));
+          setTaskMatches([]);
+          setUserMatches([]);
+        }
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, searchTerm, user?.email]);
 
   const upNext = useMemo(() => {
     return tasks
@@ -218,6 +274,94 @@ function DashboardPage() {
       </section>
 
       {/* Stat cards */}
+      <section className="dash-card">
+        <header className="dash-card-head dash-card-head-row">
+          <div>
+            <p className="dash-card-eyebrow">Search</p>
+            <h3 className="dash-card-title">Find tasks and people</h3>
+          </div>
+        </header>
+
+        <div className="tasks-search">
+          <svg
+            className="tasks-search-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            className="tasks-search-input"
+            type="search"
+            placeholder="Search tasks or people..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
+
+        {searching && <p className="dash-empty">Searching...</p>}
+        {searchError && <p className="dash-empty dash-error">{searchError}</p>}
+
+        {!!searchTerm && !searching && !searchError && (
+          <div className="dash-grid">
+            <article className="dash-card">
+              <header className="dash-card-head">
+                <p className="dash-card-eyebrow">Tasks</p>
+                <h3 className="dash-card-title">Matching tasks</h3>
+              </header>
+              {taskMatches.length === 0 ? (
+                <p className="dash-empty">No task matches.</p>
+              ) : (
+                <ul className="dash-task-list">
+                  {taskMatches.map((t) => (
+                    <li key={t.id} className="dash-task-row">
+                      <Link to={`/tasks/${t.id}`} className="dash-task-link">
+                        <span className={`dash-task-bar pri-${t.priority || 'low'}`} />
+                        <span className="dash-task-title">{t.title}</span>
+                        <span className="dash-task-due">
+                          {t.due_date
+                            ? new Date(t.due_date).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            : 'No date'}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+
+            <article className="dash-card">
+              <header className="dash-card-head">
+                <p className="dash-card-eyebrow">People</p>
+                <h3 className="dash-card-title">Matching users</h3>
+              </header>
+              {userMatches.length === 0 ? (
+                <p className="dash-empty">No people matches.</p>
+              ) : (
+                <ul className="dash-cat-list">
+                  {userMatches.map((u) => (
+                    <li key={u.id} className="dash-cat-row">
+                      <span className="dash-cat-dot" style={{ background: '#6b7280' }} />
+                      <span className="dash-cat-name">{u.name || 'Unnamed user'}</span>
+                      <span className="dash-cat-count">{u.email}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          </div>
+        )}
+      </section>
+
       <section className="dash-stats">
         <StatCard label="Due today" value={loading ? null : dueToday} accent="blue" />
         <StatCard
