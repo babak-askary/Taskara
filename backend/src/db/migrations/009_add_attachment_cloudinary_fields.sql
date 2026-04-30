@@ -1,0 +1,3 @@
+ALTER TABLE attachments
+  ADD COLUMN IF NOT EXISTS public_id     TEXT,
+  ADD COLUMN IF NOT EXISTS resource_type VARCHAR(20);
