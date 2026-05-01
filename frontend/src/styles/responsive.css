@@ -1,0 +1,75 @@
+/* ----- Responsive ---------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .bento { grid-template-columns: repeat(2, 1fr); }
+  .tile, .tile-wide { grid-column: span 2; min-height: 380px; }
+
+  .dash { padding: 24px 18px 60px; }
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid { grid-template-columns: 1fr; }
+
+  .tasks { padding: 24px 18px 60px; }
+  .tasks-toolbar { grid-template-columns: 1fr; }
+
+  .td { padding: 20px 18px 60px; }
+  .td-grid { grid-template-columns: 1fr; }
+  .td-col-side { position: static; }
+}
+
+@media (max-width: 700px) {
+  .site-nav { padding: 12px 18px; }
+  .nav-link { display: none; }
+  .nav-actions { gap: 10px; }
+
+  .mask-hero { height: 260vh; }
+  .mask-word { font-size: 180px; letter-spacing: -8px; }
+  .mask-reveal { bottom: 10vh; }
+  .statement { padding: 120px 22px 90px; }
+  .bento { grid-template-columns: 1fr; padding: 0 14px 80px; }
+  .tile, .tile-wide { grid-column: span 1; padding: 28px 24px 0; min-height: 360px; }
+  .stats { padding: 54px 28px; gap: 24px; }
+  .cta { padding: 100px 22px 120px; }
+
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+  .dash-task-link { grid-template-columns: 3px 1fr auto; gap: 12px; padding: 12px 6px; }
+  .dash-task-cat { display: none; }
+  .ai-chip { font-size: 0.78rem; padding: 6px 11px; }
+  .ai-send { min-width: 64px; padding: 0 14px; }
+  .ai-input { padding: 12px 14px; font-size: 0.95rem; }
+
+  .task-row {
+    grid-template-columns: 22px 3px 1fr auto;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .task-delete {
+    opacity: 1;
+    grid-column: 4;
+    justify-self: end;
+  }
+  .task-cat { display: none; }
+  .task-desc { display: none; }
+
+  .td-comment-form { flex-direction: column; }
+  .td-comment-btn { align-self: flex-end; }
+  .td-status { width: 100%; }
+  .td-status-btn { flex: 1; }
+
+  .ddp-modal { padding: 22px; border-radius: 20px; }
+  .ddp-shortcut { font-size: 0.78rem; padding: 8px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mask-bg, .mask-bg-b { animation: none; }
+  .bar { animation: none; height: var(--h); }
+  .orbit { animation: none; opacity: 0.4; }
+  .sync-dot { animation: none; }
+  .shield-ring { animation: none; }
+  .scroll-arrow { animation: none; }
+  .caret { animation: none; }
+  .hero-brand { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .dash-skel { animation: none; }
+  .ai-spinner { animation: none; }
+  .dash-trend-bar { transition: none; }
+}

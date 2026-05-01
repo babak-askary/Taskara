@@ -1,0 +1,133 @@
+/* ----- Reset + base ------------------------------------------------- */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #000000;
+  --bg-elev: #0b0b0d;
+  --card: #141416;
+  --card-hover: #1a1a1d;
+  --border: #2a2a2e;
+  --text: #f5f5f7;
+  --text-dim: #a1a1a6;
+  --text-muted: #6e6e73;
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+}
+
+html, body, #root { min-height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font: inherit; cursor: pointer; }
+
+/* ----- Shell + nav -------------------------------------------------- */
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.app-main { padding: 0; }
+
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px;
+  background: rgba(10, 10, 12, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  /* Logo art is black-on-white; invert so it reads white on our dark nav */
+  filter: invert(1);
+}
+
+.brand-text {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.nav-link {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+.nav-link:hover { color: var(--text); }
+
+.user-name {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.nav-ghost-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 980px;
+  padding: 7px 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.nav-ghost-btn:hover {
+  border-color: var(--text-dim);
+  background: var(--card-hover);
+}
+
+.nav-primary-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 980px;
+  padding: 8px 18px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+.nav-primary-btn:hover { background: var(--accent-hover); }
+
+/* ----- Loading ------------------------------------------------------- */
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+

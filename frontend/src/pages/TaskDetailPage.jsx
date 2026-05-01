@@ -65,11 +65,6 @@ function TaskDetailPage() {
 
   const [sharedUsers, setSharedUsers] = useState([]);
   const [sharedUsersLoading, setSharedUsersLoading] = useState(false);
-  const [shareSearchInput, setShareSearchInput] = useState('');
-  const [shareSearchResults, setShareSearchResults] = useState([]);
-  const [shareSearchLoading, setShareSearchLoading] = useState(false);
-  const [shareSearchError, setShareSearchError] = useState(null);
-  const [shareLoading, setShareLoading] = useState(false);
 
   const descTextareaRef = useRef(null);
 
@@ -121,11 +116,6 @@ function TaskDetailPage() {
       .finally(() => { if (!cancelled) setSharedUsersLoading(false); });
     return () => { cancelled = true; };
   }, [id, task?.id]);
-
-  // Search for users to share with (placeholder - backend search not yet implemented)
-  useEffect(() => {
-    setShareSearchResults([]);
-  }, [shareSearchInput]);
 
   // Load categories for the picker
   useEffect(() => {
@@ -218,21 +208,6 @@ function TaskDetailPage() {
       console.error('[unshare task]', err);
       setSharedUsers(before);
       alert(errorMessage(err, 'Could not remove share.'));
-    }
-  }
-
-  async function handleShareWithUser(user, permission = 'view') {
-    setShareLoading(true);
-    try {
-      await shareTask(id, user.user_id, permission);
-      setSharedUsers((prev) => [...prev, { ...user, permission }]);
-      setShareSearchInput('');
-      setShareSearchResults([]);
-    } catch (err) {
-      console.error('[share task]', err);
-      alert(errorMessage(err, 'Could not share task.'));
-    } finally {
-      setShareLoading(false);
     }
   }
 
@@ -545,107 +520,61 @@ function TaskDetailPage() {
             {!canEdit && (
               <p className="dash-empty">Only the task owner can share it.</p>
             )}
-            {canEdit && (
+            {canEdit && sharedUsersLoading && (
+              <div className="dash-skel td-skel-row" />
+            )}
+            {canEdit && !sharedUsersLoading && (
               <>
-                {/* Search to add new share */}
-                <div className="td-share-search">
-                  <input
-                    type="text"
-                    className="td-share-search-input"
-                    placeholder="Search people to share with…"
-                    value={shareSearchInput}
-                    onChange={(e) => setShareSearchInput(e.target.value)}
-                    disabled={shareLoading}
-                  />
-                  {shareSearchError && (
-                    <p className="td-share-error">{shareSearchError}</p>
-                  )}
-                  {shareSearchLoading ? (
-                    <div className="dash-skel td-skel-row" style={{ marginTop: '8px' }} />
-                  ) : shareSearchInput.trim() && shareSearchResults.length > 0 ? (
-                    <ul className="td-share-search-results">
-                      {shareSearchResults.map((user) => (
-                        <li key={user.user_id} className="td-share-result">
-                          <div className="td-share-info">
-                            <span className="td-share-name">{user.name}</span>
-                            <span className="td-share-email">{user.email}</span>
-                          </div>
+                {sharedUsers.length === 0 ? (
+                  <p className="dash-empty">Not shared with anyone yet.</p>
+                ) : (
+                  <ul className="td-shares">
+                    {sharedUsers.map((share) => (
+                      <li key={share.user_id} className="td-share-row">
+                        <div className="td-share-info">
+                          <span className="td-share-name">
+                            {share.name || share.email}
+                          </span>
+                          <span className="td-share-email">{share.email}</span>
+                        </div>
+                        <div className="td-share-controls">
+                          <select
+                            className="td-share-perm"
+                            value={share.permission || 'view'}
+                            onChange={(e) => {
+                              const newPerm = e.target.value;
+                              shareTask(id, share.user_id, newPerm)
+                                .then(() => {
+                                  setSharedUsers((prev) =>
+                                    prev.map((s) =>
+                                      s.user_id === share.user_id
+                                        ? { ...s, permission: newPerm }
+                                        : s
+                                    )
+                                  );
+                                })
+                                .catch((err) => {
+                                  alert(errorMessage(err, 'Could not update permission.'));
+                                });
+                            }}
+                            disabled={false}
+                          >
+                            <option value="view">Can view</option>
+                            <option value="edit">Can edit</option>
+                          </select>
                           <button
                             type="button"
-                            className="td-share-add-btn"
-                            onClick={() => handleShareWithUser(user, 'view')}
-                            disabled={shareLoading}
+                            className="td-share-remove"
+                            onClick={() => handleUnshare(share.user_id)}
+                            aria-label="Remove share"
+                            title="Remove"
                           >
-                            {shareLoading ? 'Adding…' : 'Share'}
+                            ×
                           </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : shareSearchInput.trim() ? (
-                    <p className="dash-empty" style={{ marginTop: '8px', fontSize: '0.88rem' }}>
-                      No people found.
-                    </p>
-                  ) : null}
-                </div>
-
-                {/* Existing shares */}
-                {sharedUsersLoading ? (
-                  <div className="dash-skel td-skel-row" />
-                ) : sharedUsers.length === 0 ? (
-                  <p className="dash-empty" style={{ marginTop: '16px' }}>
-                    Not shared with anyone yet.
-                  </p>
-                ) : (
-                  <>
-                    <h4 className="td-share-heading">Shared with</h4>
-                    <ul className="td-shares">
-                      {sharedUsers.map((share) => (
-                        <li key={share.user_id} className="td-share-row">
-                          <div className="td-share-info">
-                            <span className="td-share-name">
-                              {share.name || share.email}
-                            </span>
-                            <span className="td-share-email">{share.email}</span>
-                          </div>
-                          <div className="td-share-controls">
-                            <select
-                              className="td-share-perm"
-                              value={share.permission || 'view'}
-                              onChange={(e) => {
-                                const newPerm = e.target.value;
-                                shareTask(id, share.user_id, newPerm)
-                                  .then(() => {
-                                    setSharedUsers((prev) =>
-                                      prev.map((s) =>
-                                        s.user_id === share.user_id
-                                          ? { ...s, permission: newPerm }
-                                          : s
-                                      )
-                                    );
-                                  })
-                                  .catch((err) => {
-                                    alert(errorMessage(err, 'Could not update permission.'));
-                                  });
-                              }}
-                              disabled={false}
-                            >
-                              <option value="view">Can view</option>
-                              <option value="edit">Can edit</option>
-                            </select>
-                            <button
-                              type="button"
-                              className="td-share-remove"
-                              onClick={() => handleUnshare(share.user_id)}
-                              aria-label="Remove share"
-                              title="Remove"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </>
             )}
