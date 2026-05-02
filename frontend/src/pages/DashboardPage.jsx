@@ -266,7 +266,7 @@ function DashboardPage() {
             <div className="ai-answer-text">{aiAnswer.reply}</div>
             <div className="ai-answer-meta">
               <span className="ai-answer-dot" />
-              {aiAnswer.source === 'anthropic' ? 'Claude' : 'Taskara helper'}
+              {aiAnswer.source === 'huggingface' ? 'Hugging Face' : 'Taskara helper'}
             </div>
           </div>
         )}
