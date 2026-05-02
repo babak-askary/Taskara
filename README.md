@@ -43,21 +43,14 @@ This installs packages in root, backend, and frontend folders.
 
 ### 3. Setup environment variables
 
-**Backend** (create `backend/.env`):
+Copy each `.env.example` to `.env` and fill in the values:
+
 ```bash
-PORT=5000
-DATABASE_URL=postgresql://user:password@host:5432/taskara
-FRONTEND_URL=http://localhost:5173
-JWT_SECRET=your_secret_here
-NODE_ENV=development
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-**Frontend** (create `frontend/.env`):
-```bash
-VITE_API_URL=http://localhost:5000/api
-```
-
-See `.env.example` files for reference.
+The example files list every variable the app needs (Postgres, Auth0, Cloudinary, Hugging Face).
 
 ### 4. Run the project
 ```bash
@@ -65,7 +58,7 @@ npm run dev
 ```
 
 This starts:
-- Backend: http://localhost:5000
+- Backend: http://localhost:5001
 - Frontend: http://localhost:5173
 
 ## Development Workflow
