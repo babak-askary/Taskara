@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
 const taskShareController = require('../controllers/taskShareController');
+const timeEntryController = require('../controllers/timeEntryController');
 const { authenticate } = require('../middleware/authMiddleware');
 
 router.get('/', authenticate, taskController.getAllTasks);
@@ -20,5 +21,11 @@ router.delete('/:id/comments/:commentId', authenticate, taskController.deleteCom
 router.get('/:id/shares', authenticate, taskShareController.getSharedUsers);
 router.post('/:id/share', authenticate, taskShareController.shareTask);
 router.delete('/:id/share/:userId', authenticate, taskShareController.unshareTask);
+
+// Time tracking
+router.get('/:id/time', authenticate, timeEntryController.listEntries);
+router.post('/:id/time/start', authenticate, timeEntryController.startTimer);
+router.post('/:id/time/stop', authenticate, timeEntryController.stopTimer);
+router.post('/:id/time/manual', authenticate, timeEntryController.addManual);
 
 module.exports = router;
