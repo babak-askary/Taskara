@@ -13,6 +13,7 @@ import { getCategories } from '../api/categoryApi';
 import { errorMessage } from '../api/client';
 import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
 import ShareTaskPanel from '../components/tasks/ShareTaskPanel';
+import TimeTracker from '../components/tasks/TimeTracker';
 
 const STATUSES = [
   { value: 'todo', label: 'To do' },
@@ -499,6 +500,24 @@ function TaskDetailPage() {
               />
             </div>
 
+            <div className="td-field">
+              <label className="td-label" htmlFor="td-estimate">Estimated minutes</label>
+              <input
+                id="td-estimate"
+                className="td-input"
+                type="number"
+                min="0"
+                max="100000"
+                placeholder="e.g. 60"
+                value={task.estimated_time ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  patch({ estimated_time: v === '' ? null : parseInt(v, 10) });
+                }}
+                disabled={!canEdit}
+              />
+            </div>
+
             {task.category_name && (
               <div className="td-field-display">
                 <span className="td-label">Current category</span>
@@ -511,6 +530,12 @@ function TaskDetailPage() {
               </div>
             )}
           </div>
+
+          <TimeTracker
+            task={task}
+            canEdit={canEdit}
+            onTaskChange={(updated) => setTask((t) => ({ ...t, ...updated }))}
+          />
 
           {task.user_permission === 'owner' && (
             <ShareTaskPanel taskId={task.id} />
