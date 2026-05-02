@@ -112,13 +112,13 @@ function localReply(prompt, ctx) {
   );
 }
 
-// Calls Anthropic's Messages API via built-in fetch (Node 18+).
+// Calls Hugging Face's OpenAI-compatible chat completions router.
 // Returns the reply string, or throws so the caller can fall back.
-async function callAnthropic(prompt, ctx) {
-  const key = process.env.ANTHROPIC_API_KEY;
+async function callHuggingFace(prompt, ctx) {
+  const key = process.env.HUGGINGFACE_API_KEY;
   if (!key) throw new Error('no-api-key');
 
-  const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+  const model = process.env.HUGGINGFACE_MODEL || 'meta-llama/Llama-3.1-8B-Instruct';
 
   const context = JSON.stringify({
     stats: ctx.stats,
@@ -144,32 +144,30 @@ async function callAnthropic(prompt, ctx) {
     "numbered lists over paragraphs. Never invent tasks that aren't in the snapshot.\n\n" +
     `USER SNAPSHOT:\n${context}`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://router.huggingface.co/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model,
       max_tokens: 500,
-      system,
-      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt },
+      ],
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`anthropic ${res.status}: ${body.slice(0, 200)}`);
+    throw new Error(`huggingface ${res.status}: ${body.slice(0, 200)}`);
   }
 
   const data = await res.json();
-  const text = (data.content || [])
-    .filter((c) => c.type === 'text')
-    .map((c) => c.text)
-    .join('\n')
-    .trim();
+  const text = (data.choices?.[0]?.message?.content || '').trim();
   if (!text) throw new Error('empty response');
   return text;
 }
@@ -177,12 +175,12 @@ async function callAnthropic(prompt, ctx) {
 async function ask(userId, prompt) {
   const ctx = await buildContext(userId);
 
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (process.env.HUGGINGFACE_API_KEY) {
     try {
-      const reply = await callAnthropic(prompt, ctx);
-      return { reply, source: 'anthropic' };
+      const reply = await callHuggingFace(prompt, ctx);
+      return { reply, source: 'huggingface' };
     } catch (err) {
-      console.warn('[ai] Anthropic call failed, falling back to local:', err.message);
+      console.warn('[ai] Hugging Face call failed, falling back to local:', err.message);
     }
   }
 
