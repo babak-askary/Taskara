@@ -65,6 +65,8 @@ function TaskDetailPage() {
   const [commentDraft, setCommentDraft] = useState('');
   const [posting, setPosting] = useState(false);
 
+  const [spawnedNotice, setSpawnedNotice] = useState(null);
+
   const descTextareaRef = useRef(null);
 
   // Load task
@@ -145,7 +147,11 @@ function TaskDetailPage() {
     setSaving(true);
     try {
       const { data } = await updateTask(id, fields);
-      setTask((t) => ({ ...t, ...data }));
+      const { spawned, ...rest } = data;
+      setTask((t) => ({ ...t, ...rest }));
+      if (spawned?.id) {
+        setSpawnedNotice(spawned);
+      }
     } catch (err) {
       setTask(prev);
       alert(errorMessage(err, 'Could not save change.'));
@@ -310,6 +316,30 @@ function TaskDetailPage() {
           )}
         </div>
       </header>
+
+      {spawnedNotice && (
+        <div className="td-spawn-notice" role="status">
+          <span aria-hidden="true">↻</span>
+          <span>
+            Repeat created — next instance is due{' '}
+            {spawnedNotice.due_date
+              ? new Date(spawnedNotice.due_date).toLocaleDateString(undefined, {
+                  weekday: 'short', month: 'short', day: 'numeric',
+                })
+              : 'soon'}
+            .{' '}
+            <Link to={`/tasks/${spawnedNotice.id}`}>Open it.</Link>
+          </span>
+          <button
+            type="button"
+            className="td-spawn-close"
+            aria-label="Dismiss"
+            onClick={() => setSpawnedNotice(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Status segmented control */}
       <section className="td-status">
@@ -516,6 +546,30 @@ function TaskDetailPage() {
                 }}
                 disabled={!canEdit}
               />
+            </div>
+
+            <div className="td-field">
+              <label className="td-label" htmlFor="td-repeat">Repeats</label>
+              <select
+                id="td-repeat"
+                className="td-select"
+                value={task.is_recurring ? (task.recurrence_rule || '') : ''}
+                onChange={(e) => {
+                  const rule = e.target.value;
+                  if (!rule) {
+                    patch({ is_recurring: false, recurrence_rule: null });
+                  } else {
+                    patch({ is_recurring: true, recurrence_rule: rule });
+                  }
+                }}
+                disabled={!canEdit}
+              >
+                <option value="">Doesn't repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <p className="td-hint">When marked done, a new instance is created with the next due date.</p>
             </div>
 
             {task.category_name && (

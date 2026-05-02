@@ -2761,6 +2761,62 @@ button { font: inherit; cursor: pointer; }
   font-variant-numeric: tabular-nums;
 }
 
+.task-recurring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* ----- Recurring spawn notice on TaskDetailPage --------------------- */
+
+.td-spawn-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 4px;
+  padding: 10px 14px;
+  background: rgba(10, 132, 255, 0.10);
+  border: 1px solid rgba(10, 132, 255, 0.32);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+  animation: nav-slide 0.22s ease;
+}
+.td-spawn-notice > span:first-child {
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+.td-spawn-notice a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.td-spawn-close {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.td-spawn-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
 /* ----- Profile page ------------------------------------------------- */
 
 .profile {
