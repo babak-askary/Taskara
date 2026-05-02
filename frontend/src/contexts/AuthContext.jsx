@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { setTokenGetter } from '../api/client';
 import { login as syncUser } from '../api/authApi';
+import { connectSocket, disconnectSocket } from '../services/socket';
 
 // Connects Auth0 to the API client and syncs user to database on login.
 export function AuthSetup() {
@@ -26,6 +27,16 @@ export function AuthSetup() {
       }).catch(() => {});
     }
   }, [isAuthenticated, user]);
+
+  // Open / close the realtime socket alongside the auth session
+  useEffect(() => {
+    if (isAuthenticated) {
+      connectSocket(() => getAccessTokenSilently());
+    } else {
+      disconnectSocket();
+    }
+    return () => disconnectSocket();
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   return null;
 }

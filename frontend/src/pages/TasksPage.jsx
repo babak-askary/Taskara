@@ -10,6 +10,7 @@ import {
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
 import apiClient, { errorMessage } from '../api/client';
+import { onSocketEvent } from '../services/socket';
 import DueDatePicker from '../components/common/DueDatePicker';
 
 const STATUS_CHIPS = [
@@ -80,6 +81,21 @@ function TasksPage() {
       .then((res) => { if (!cancelled) setCategories(res.data || []); })
       .catch(() => {});
     return () => { cancelled = true; };
+  }, [isAuthenticated]);
+
+  // Live updates: a task gets shared with me, or I'm removed from one
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const offShared = onSocketEvent('task:shared', (incoming) => {
+      if (!incoming?.id) return;
+      setTasks((prev) => (
+        prev.find((t) => t.id === incoming.id) ? prev : [incoming, ...prev]
+      ));
+    });
+    const offUnshared = onSocketEvent('task:unshared', ({ task_id }) => {
+      setTasks((prev) => prev.filter((t) => t.id !== task_id));
+    });
+    return () => { offShared(); offUnshared(); };
   }, [isAuthenticated]);
 
   // Tasks — re-fetch when filters change
