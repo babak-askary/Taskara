@@ -478,6 +478,13 @@ function TaskRow({ task, onToggle, onDelete }) {
       </Link>
 
       <div className="task-meta">
+        {task.time_spent > 0 && (
+          <span className="task-time" title={`${task.time_spent} minutes logged`}>
+            {task.time_spent >= 60
+              ? `${Math.floor(task.time_spent / 60)}h${task.time_spent % 60 ? ` ${task.time_spent % 60}m` : ''}`
+              : `${task.time_spent}m`}
+          </span>
+        )}
         {task.category_name && (
           <span
             className="task-cat"

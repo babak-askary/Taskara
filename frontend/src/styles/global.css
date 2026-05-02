@@ -2632,6 +2632,135 @@ button { font: inherit; cursor: pointer; }
   color: var(--text-muted);
 }
 
+/* ----- Time tracker ------------------------------------------------- */
+
+.td-time-totals {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 14px;
+}
+
+.td-time-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.td-time-stat-num {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.td-time-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.td-time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.td-time-elapsed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text);
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  flex: 1;
+  min-width: 110px;
+}
+
+.td-time-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34c759;
+  box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6);
+  animation: td-time-pulse 1.4s ease-out infinite;
+}
+@keyframes td-time-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(52, 199, 89, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+}
+
+.td-time-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.td-time-btn:hover:not(:disabled) {
+  border-color: var(--text-dim);
+  background: var(--card-hover);
+}
+.td-time-btn:disabled { opacity: 0.5; cursor: progress; }
+
+.td-time-start {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.td-time-start:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.td-time-stop {
+  background: rgba(255, 45, 95, 0.14);
+  border-color: rgba(255, 45, 95, 0.4);
+  color: #ff7590;
+}
+.td-time-stop:hover:not(:disabled) {
+  background: rgba(255, 45, 95, 0.22);
+}
+
+.td-time-manual-form { margin-top: 12px; }
+
+.td-time-manual-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.td-time-manual-input {
+  flex: 1;
+  max-width: 120px;
+}
+
+.td-time-error {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+}
+
+/* Tiny "spent" pill on each row in TasksPage */
+.task-time {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(110, 110, 115, 0.18);
+  padding: 3px 8px;
+  border-radius: 980px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ----- Profile page ------------------------------------------------- */
 
 .profile {
