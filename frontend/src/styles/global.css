@@ -2710,6 +2710,19 @@ button { font: inherit; cursor: pointer; }
 
 /* ----- Responsive ---------------------------------------------------- */
 
+@media (max-width: 1024px) {
+  .site-nav { padding: 14px 22px; }
+  .dash { padding: 32px 22px 70px; }
+  .tasks { padding: 32px 22px 70px; }
+  .td { padding: 28px 22px 70px; }
+
+  .mask-word { font-size: 200px; letter-spacing: -10px; }
+  .mask-hero { height: 220vh; }
+
+  .bento { padding: 0 18px 100px; }
+  .stats { padding: 70px 28px; gap: 28px; }
+}
+
 @media (max-width: 900px) {
   .bento { grid-template-columns: repeat(2, 1fr); }
   .tile, .tile-wide { grid-column: span 2; min-height: 380px; }
@@ -2782,7 +2795,7 @@ button { font: inherit; cursor: pointer; }
     padding: 10px 16px;
   }
 
-  .mask-hero { height: 260vh; }
+  .mask-hero { height: 160vh; }
   .mask-word { font-size: 180px; letter-spacing: -8px; }
   .mask-reveal { bottom: 10vh; }
   .statement { padding: 120px 22px 90px; }
