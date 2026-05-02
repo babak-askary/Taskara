@@ -12,6 +12,7 @@ import {
 import { getCategories } from '../api/categoryApi';
 import { errorMessage } from '../api/client';
 import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
+import ShareTaskPanel from '../components/tasks/ShareTaskPanel';
 
 const STATUSES = [
   { value: 'todo', label: 'To do' },
@@ -510,6 +511,10 @@ function TaskDetailPage() {
               </div>
             )}
           </div>
+
+          {task.user_permission === 'owner' && (
+            <ShareTaskPanel taskId={task.id} />
+          )}
 
           {canEdit && (
             <button type="button" className="td-delete-btn" onClick={handleDelete}>
