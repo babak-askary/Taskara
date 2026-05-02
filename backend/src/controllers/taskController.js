@@ -1,6 +1,7 @@
 const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
 const notificationService = require('../services/notificationService');
+const { RULES: RECURRENCE_RULES, isValidRule, nextDueDate } = require('../utils/recurrence');
 
 const STATUSES = ['todo', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -24,6 +25,10 @@ function validateTask(body, partial = false) {
   }
   if (body.due_date && isNaN(Date.parse(body.due_date))) {
     errors.push('due_date must be a valid date');
+  }
+  if (body.recurrence_rule !== undefined && body.recurrence_rule !== null
+      && body.recurrence_rule !== '' && !isValidRule(body.recurrence_rule)) {
+    errors.push(`recurrence_rule must be one of: ${RECURRENCE_RULES.join(', ')}`);
   }
   return errors;
 }
@@ -87,9 +92,36 @@ async function updateTask(req, res, next) {
     const errors = validateTask(req.body, true);
     if (errors.length) return res.status(400).json({ errors });
 
+    const before = await taskModel.findById(taskId, req.user.id);
     const updated = await taskModel.update(taskId, req.body);
     notificationService.notifyTaskUpdate(updated);
-    res.json(updated);
+
+    // If a recurring task just transitioned to "done", spawn the next instance
+    let spawned = null;
+    if (
+      before &&
+      before.is_recurring &&
+      isValidRule(before.recurrence_rule) &&
+      before.status !== 'done' &&
+      req.body.status === 'done'
+    ) {
+      const anchor = before.due_date ? new Date(before.due_date) : new Date();
+      const nextDate = nextDueDate(before.recurrence_rule, anchor);
+      if (nextDate) {
+        spawned = await taskModel.create(before.owner_id, {
+          title: before.title,
+          description: before.description,
+          priority: before.priority,
+          category_id: before.category_id,
+          is_recurring: true,
+          recurrence_rule: before.recurrence_rule,
+          estimated_time: before.estimated_time,
+          due_date: nextDate.toISOString(),
+        });
+      }
+    }
+
+    res.json(spawned ? { ...updated, spawned } : updated);
   } catch (err) {
     next(err);
   }
