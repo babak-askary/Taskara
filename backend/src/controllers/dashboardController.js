@@ -17,7 +17,7 @@ async function getStats(req, res, next) {
 // GET /api/dashboard/performance — completion trend + metrics
 async function getPerformance(req, res, next) {
   try {
-    const days = req.query.days ? parseInt(req.query.days) : 14;
+    const days = req.query.days ? parseInt(req.query.days, 10) : 14;
     const safeDays = Math.max(1, Math.min(days, 90)); // clamp 1-90
 
     const [metrics, trend] = await Promise.all([

@@ -1,6 +1,7 @@
 const attachmentModel = require('../models/attachmentModel');
 const taskModel = require('../models/taskModel');
 const cloudinaryService = require('../services/cloudinaryService');
+const parseId = require('../utils/parseId');
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -10,7 +11,8 @@ async function uploadAttachment(req, res, next) {
     if (!cloudinaryService.isConfigured()) {
       return res.status(503).json({ message: 'File uploads are not configured on the server.' });
     }
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.isOwnerOrEditor(taskId, req.user.id))) {
       return res.status(403).json({ message: 'You need edit access to attach files.' });
     }
@@ -46,7 +48,8 @@ async function uploadAttachment(req, res, next) {
 // GET /api/tasks/:id/attachments
 async function listAttachments(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.hasAccess(taskId, req.user.id))) {
       return res.status(403).json({ message: 'No access to this task.' });
     }
@@ -60,8 +63,11 @@ async function listAttachments(req, res, next) {
 // DELETE /api/tasks/:id/attachments/:attachmentId
 async function deleteAttachment(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
-    const attachmentId = parseInt(req.params.attachmentId);
+    const taskId = parseId(req.params.id);
+    const attachmentId = parseId(req.params.attachmentId);
+    if (taskId === null || attachmentId === null) {
+      return res.status(400).json({ message: 'Invalid task or attachment id' });
+    }
 
     const att = await attachmentModel.findById(attachmentId);
     if (!att || att.task_id !== taskId) {
