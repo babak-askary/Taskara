@@ -11,6 +11,7 @@ import {
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
 import { errorMessage } from '../api/client';
+import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
 
 const STATUSES = [
   { value: 'todo', label: 'To do' },
@@ -106,6 +107,35 @@ function TaskDetailPage() {
     if (!isAuthenticated) return;
     getCategories().then((res) => setCategories(res.data || [])).catch(() => {});
   }, [isAuthenticated]);
+
+  // Subscribe to live updates for this task
+  useEffect(() => {
+    if (!isAuthenticated || !task?.id) return;
+    const taskId = task.id;
+    joinTask(taskId);
+
+    const offUpdated = onSocketEvent('task:updated', (incoming) => {
+      if (incoming?.id === taskId) {
+        setTask((cur) => ({ ...cur, ...incoming }));
+      }
+    });
+    const offComment = onSocketEvent('task:comment', ({ task_id, comment }) => {
+      if (task_id !== taskId || !comment) return;
+      setComments((prev) => (
+        prev.find((c) => c.id === comment.id) ? prev : [comment, ...prev]
+      ));
+    });
+    const offDeleted = onSocketEvent('task:deleted', ({ task_id }) => {
+      if (task_id === taskId) navigate('/tasks');
+    });
+
+    return () => {
+      offUpdated();
+      offComment();
+      offDeleted();
+      leaveTask(taskId);
+    };
+  }, [isAuthenticated, task?.id, navigate]);
 
   async function patch(fields) {
     const prev = task;
