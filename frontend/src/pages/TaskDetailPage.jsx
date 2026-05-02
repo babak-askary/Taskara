@@ -256,23 +256,23 @@ function TaskDetailPage() {
 
         <div className="td-meta">
           <span>By {task.owner_name || 'Unknown'}</span>
-          <span className="td-meta-dot">·</span>
+          <span className="td-meta-dot" aria-hidden="true">·</span>
           <span>Created {relativeTime(task.created_at)}</span>
           {task.updated_at && task.updated_at !== task.created_at && (
             <>
-              <span className="td-meta-dot">·</span>
+              <span className="td-meta-dot" aria-hidden="true">·</span>
               <span>Updated {relativeTime(task.updated_at)}</span>
             </>
           )}
           {saving && (
             <>
-              <span className="td-meta-dot">·</span>
+              <span className="td-meta-dot" aria-hidden="true">·</span>
               <span className="td-saving">Saving…</span>
             </>
           )}
           {!canEdit && (
             <>
-              <span className="td-meta-dot">·</span>
+              <span className="td-meta-dot" aria-hidden="true">·</span>
               <span className="td-readonly">View only</span>
             </>
           )}
@@ -379,7 +379,7 @@ function TaskDetailPage() {
                     c.author_email === currentUserEmail;
                   return (
                     <li key={c.id} className="td-comment">
-                      <div className="td-comment-avatar">
+                      <div className="td-comment-avatar" aria-hidden="true">
                         {c.author_avatar ? (
                           <img src={c.author_avatar} alt="" />
                         ) : (
