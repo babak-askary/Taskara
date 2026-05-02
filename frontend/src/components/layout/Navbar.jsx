@@ -21,6 +21,7 @@ function Navbar() {
           <>
             <Link to="/dashboard" className="nav-link">Dashboard</Link>
             <Link to="/tasks" className="nav-link">Tasks</Link>
+            <Link to="/profile" className="nav-link">Profile</Link>
             <span className="user-name">{user.name}</span>
             <button className="nav-ghost-btn" onClick={handleLogout}>Logout</button>
           </>

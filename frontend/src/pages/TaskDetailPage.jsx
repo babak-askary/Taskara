@@ -10,6 +10,7 @@ import {
   deleteComment,
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
+import { getSharedUsers, shareTask, unshareTask } from '../api/taskShareApi';
 import { errorMessage } from '../api/client';
 
 const STATUSES = [
@@ -62,6 +63,9 @@ function TaskDetailPage() {
   const [commentDraft, setCommentDraft] = useState('');
   const [posting, setPosting] = useState(false);
 
+  const [sharedUsers, setSharedUsers] = useState([]);
+  const [sharedUsersLoading, setSharedUsersLoading] = useState(false);
+
   const descTextareaRef = useRef(null);
 
   // Load task
@@ -98,6 +102,18 @@ function TaskDetailPage() {
       .then((res) => { if (!cancelled) setComments(res.data || []); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setCommentsLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, task?.id]);
+
+  // Load shared users when task lands
+  useEffect(() => {
+    if (!task) return;
+    let cancelled = false;
+    setSharedUsersLoading(true);
+    getSharedUsers(id)
+      .then((res) => { if (!cancelled) setSharedUsers(res.data || []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setSharedUsersLoading(false); });
     return () => { cancelled = true; };
   }, [id, task?.id]);
 
@@ -179,6 +195,19 @@ function TaskDetailPage() {
       console.error('[delete comment]', err);
       setComments(before);
       alert(errorMessage(err, 'Could not delete comment.'));
+    }
+  }
+
+  async function handleUnshare(userId) {
+    if (!window.confirm('Remove this share?')) return;
+    const before = sharedUsers;
+    setSharedUsers((prev) => prev.filter((s) => s.user_id !== userId));
+    try {
+      await unshareTask(id, userId);
+    } catch (err) {
+      console.error('[unshare task]', err);
+      setSharedUsers(before);
+      alert(errorMessage(err, 'Could not remove share.'));
     }
   }
 
@@ -485,11 +514,71 @@ function TaskDetailPage() {
             )}
           </div>
 
-          {canEdit && (
-            <button type="button" className="td-delete-btn" onClick={handleDelete}>
-              Delete this task
-            </button>
-          )}
+          {/* Share section */}
+          <div className="td-card">
+            <h3 className="td-card-title">Share</h3>
+            {!canEdit && (
+              <p className="dash-empty">Only the task owner can share it.</p>
+            )}
+            {canEdit && sharedUsersLoading && (
+              <div className="dash-skel td-skel-row" />
+            )}
+            {canEdit && !sharedUsersLoading && (
+              <>
+                {sharedUsers.length === 0 ? (
+                  <p className="dash-empty">Not shared with anyone yet.</p>
+                ) : (
+                  <ul className="td-shares">
+                    {sharedUsers.map((share) => (
+                      <li key={share.user_id} className="td-share-row">
+                        <div className="td-share-info">
+                          <span className="td-share-name">
+                            {share.name || share.email}
+                          </span>
+                          <span className="td-share-email">{share.email}</span>
+                        </div>
+                        <div className="td-share-controls">
+                          <select
+                            className="td-share-perm"
+                            value={share.permission || 'view'}
+                            onChange={(e) => {
+                              const newPerm = e.target.value;
+                              shareTask(id, share.user_id, newPerm)
+                                .then(() => {
+                                  setSharedUsers((prev) =>
+                                    prev.map((s) =>
+                                      s.user_id === share.user_id
+                                        ? { ...s, permission: newPerm }
+                                        : s
+                                    )
+                                  );
+                                })
+                                .catch((err) => {
+                                  alert(errorMessage(err, 'Could not update permission.'));
+                                });
+                            }}
+                            disabled={false}
+                          >
+                            <option value="view">Can view</option>
+                            <option value="edit">Can edit</option>
+                          </select>
+                          <button
+                            type="button"
+                            className="td-share-remove"
+                            onClick={() => handleUnshare(share.user_id)}
+                            aria-label="Remove share"
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
         </aside>
       </div>
     </div>

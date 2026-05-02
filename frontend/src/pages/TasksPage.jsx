@@ -9,7 +9,7 @@ import {
   deleteTask,
 } from '../api/taskApi';
 import { getCategories } from '../api/categoryApi';
-import { errorMessage } from '../api/client';
+import apiClient, { errorMessage } from '../api/client';
 import DueDatePicker from '../components/common/DueDatePicker';
 
 const STATUS_CHIPS = [
@@ -57,6 +57,9 @@ function TasksPage() {
   const [sort, setSort] = useState('due_date:ASC');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [people, setPeople] = useState([]);
+  const [peopleLoading, setPeopleLoading] = useState(false);
+  const [peopleError, setPeopleError] = useState(null);
 
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
@@ -109,6 +112,40 @@ function TasksPage() {
 
     return () => { cancelled = true; };
   }, [isAuthenticated, status, priority, categoryId, sort, search]);
+
+  // People search for collaboration/sharing hints
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!search) {
+      setPeople([]);
+      setPeopleLoading(false);
+      setPeopleError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPeopleLoading(true);
+    setPeopleError(null);
+
+    apiClient
+      .get('/users', { params: { search, limit: 8 } })
+      .then((res) => {
+        if (!cancelled) setPeople(res.data || []);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setPeople([]);
+          setPeopleError(errorMessage(err, 'Could not search people.'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPeopleLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, search]);
 
   const counts = useMemo(() => {
     const open = tasks.filter((t) => t.status !== 'done').length;
@@ -312,6 +349,35 @@ function TasksPage() {
         onSkip={() => createPendingTask(null)}
         onClose={handlePickerCancel}
       />
+
+      {search && (
+        <section className="dash-card" style={{ marginBottom: '1rem' }}>
+          <header className="dash-card-head dash-card-head-row">
+            <div>
+              <p className="dash-card-eyebrow">People</p>
+              <h3 className="dash-card-title">Matching users</h3>
+            </div>
+          </header>
+
+          {peopleLoading ? (
+            <p className="dash-empty">Searching people...</p>
+          ) : peopleError ? (
+            <p className="dash-empty dash-error">{peopleError}</p>
+          ) : people.length === 0 ? (
+            <p className="dash-empty">No people match your search.</p>
+          ) : (
+            <ul className="dash-cat-list">
+              {people.map((p) => (
+                <li key={p.id} className="dash-cat-row">
+                  <span className="dash-cat-dot" style={{ background: '#6b7280' }} />
+                  <span className="dash-cat-name">{p.name || 'Unnamed user'}</span>
+                  <span className="dash-cat-count">{p.email}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="tasks-list">
         {loading ? (

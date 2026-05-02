@@ -2306,6 +2306,83 @@ button { font: inherit; cursor: pointer; }
   letter-spacing: -0.005em;
 }
 
+/* Sharing */
+.td-shares {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.td-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.td-share-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.td-share-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.td-share-name {
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-share-email {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-share-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.td-share-perm {
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.td-share-perm:hover { background: var(--card-hover); }
+
+.td-share-remove {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.td-share-remove:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
 /* Details sidebar */
 .td-details { padding-bottom: 20px; }
 .td-field {
