@@ -139,7 +139,6 @@ function TasksPage() {
       setPendingTitle('');
       setPickerOpen(false);
     } catch (err) {
-      console.error('[create task]', err);
       alert(errorMessage(err, 'Could not create task.'));
     } finally {
       setAdding(false);
@@ -159,7 +158,6 @@ function TasksPage() {
     try {
       await updateTask(task.id, { status: next });
     } catch (err) {
-      console.error('[update task]', err);
       setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, status: prev } : t)));
       alert(errorMessage(err, 'Could not update task.'));
     }
@@ -172,7 +170,6 @@ function TasksPage() {
     try {
       await deleteTask(task.id);
     } catch (err) {
-      console.error('[delete task]', err);
       setTasks(before);
       alert(errorMessage(err, 'Could not delete task.'));
     }
