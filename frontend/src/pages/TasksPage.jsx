@@ -468,6 +468,16 @@ function TaskRow({ task, onToggle, onDelete }) {
       <Link to={`/tasks/${task.id}`} className="task-main">
         <div className="task-title-row">
           <span className="task-title">{task.title}</span>
+          {task.is_recurring && (
+            <span
+              className="task-recurring"
+              role="img"
+              aria-label="Recurring task"
+              title="Recurring task"
+            >
+              ↻
+            </span>
+          )}
           {inProgress && (
             <span className="task-chip task-chip-progress">In progress</span>
           )}
