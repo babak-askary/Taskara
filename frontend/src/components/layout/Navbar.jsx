@@ -66,7 +66,7 @@ function Navbar() {
           <>
             <Link to="/dashboard" className="nav-link" onClick={closeMenu}>Dashboard</Link>
             <Link to="/tasks" className="nav-link" onClick={closeMenu}>Tasks</Link>
-            <span className="user-name">{user.name}</span>
+            <Link to="/profile" className="user-name nav-link" onClick={closeMenu}>{user.name}</Link>
             <button className="nav-ghost-btn" onClick={() => { closeMenu(); handleLogout(); }}>Logout</button>
           </>
         ) : (

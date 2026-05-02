@@ -2626,6 +2626,113 @@ button { font: inherit; cursor: pointer; }
   border-color: rgba(255, 45, 95, 0.3);
 }
 
+.td-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ----- Profile page ------------------------------------------------- */
+
+.profile {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.profile-header {
+  margin-bottom: 28px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.profile-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 22px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  position: sticky;
+  top: 86px;
+}
+
+.profile-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #5e5ce6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.25);
+}
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-display-name {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.profile-display-email {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.profile-form {
+  margin: 0;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.profile-saved {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.profile-error {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
+.profile-skel {
+  height: 380px;
+  border-radius: 18px;
+}
+
 /* Skeletons */
 .td-skel-hero { height: 100px; }
 .td-skel-body { height: 400px; }
@@ -2903,6 +3010,11 @@ button { font: inherit; cursor: pointer; }
   .td { padding: 20px 18px 60px; }
   .td-grid { grid-template-columns: 1fr; }
   .td-col-side { position: static; }
+
+  .profile { padding: 24px 18px 60px; }
+  .profile-grid { grid-template-columns: 1fr; gap: 20px; }
+  .profile-side { position: static; padding: 22px 20px; }
+  .profile-avatar { width: 92px; height: 92px; font-size: 2.2rem; }
 }
 
 @media (max-width: 700px) {
