@@ -120,6 +120,69 @@ button { font: inherit; cursor: pointer; }
 }
 .nav-primary-btn:hover { background: var(--accent-hover); }
 
+/* ----- Mobile drawer toggle (hidden on desktop) --------------------- */
+
+.nav-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.nav-toggle:hover {
+  border-color: var(--text-dim);
+  background: var(--card-hover);
+}
+.nav-toggle-bar {
+  position: absolute;
+  left: 50%;
+  width: 18px;
+  height: 1.5px;
+  background: var(--text);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: transform 0.22s ease, opacity 0.18s ease, top 0.22s ease;
+}
+.nav-toggle-bar:nth-child(1) { top: 14px; }
+.nav-toggle-bar:nth-child(2) { top: 19px; }
+.nav-toggle-bar:nth-child(3) { top: 24px; }
+.nav-toggle.is-open .nav-toggle-bar:nth-child(1) {
+  top: 19px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.nav-toggle.is-open .nav-toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle.is-open .nav-toggle-bar:nth-child(3) {
+  top: 19px;
+  transform: translateX(-50%) rotate(-45deg);
+}
+
+.nav-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  top: 60px;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  padding: 0;
+  z-index: 5;
+  animation: nav-fade 0.18s ease;
+}
+@keyframes nav-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes nav-slide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ----- Landing base ------------------------------------------------- */
 
 .landing { width: 100%; }
@@ -2664,9 +2727,60 @@ button { font: inherit; cursor: pointer; }
 }
 
 @media (max-width: 700px) {
-  .site-nav { padding: 12px 18px; }
-  .nav-link { display: none; }
-  .nav-actions { gap: 10px; }
+  .site-nav { padding: 10px 18px; }
+
+  .nav-toggle { display: block; }
+  .nav-backdrop { display: block; }
+
+  .nav-actions {
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    right: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 14px;
+    margin-top: 8px;
+    background: rgba(20, 20, 22, 0.96);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .nav-actions.is-open {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+    animation: nav-slide 0.22s ease;
+  }
+  .nav-actions .nav-link {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 1rem;
+  }
+  .nav-actions .nav-link:hover {
+    background: var(--card-hover);
+  }
+  .nav-actions .user-name {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .nav-actions .nav-ghost-btn,
+  .nav-actions .nav-primary-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
 
   .mask-hero { height: 260vh; }
   .mask-word { font-size: 180px; letter-spacing: -8px; }

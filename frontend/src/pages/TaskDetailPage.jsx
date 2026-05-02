@@ -115,7 +115,6 @@ function TaskDetailPage() {
       const { data } = await updateTask(id, fields);
       setTask((t) => ({ ...t, ...data }));
     } catch (err) {
-      console.error('[update task]', err);
       setTask(prev);
       alert(errorMessage(err, 'Could not save change.'));
     } finally {
@@ -147,7 +146,6 @@ function TaskDetailPage() {
       await deleteTask(id);
       navigate('/tasks');
     } catch (err) {
-      console.error('[delete task]', err);
       alert(errorMessage(err, 'Could not delete task.'));
     }
   }
@@ -162,7 +160,6 @@ function TaskDetailPage() {
       setComments((prev) => [data, ...prev]);
       setCommentDraft('');
     } catch (err) {
-      console.error('[add comment]', err);
       alert(errorMessage(err, 'Could not post comment.'));
     } finally {
       setPosting(false);
@@ -176,7 +173,6 @@ function TaskDetailPage() {
     try {
       await deleteComment(id, c.id);
     } catch (err) {
-      console.error('[delete comment]', err);
       setComments(before);
       alert(errorMessage(err, 'Could not delete comment.'));
     }

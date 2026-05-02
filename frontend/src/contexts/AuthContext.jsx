@@ -23,7 +23,7 @@ export function AuthSetup() {
         email: user.email,
         name: user.name || user.nickname || user.email,
         picture: user.picture,
-      }).catch((err) => console.error('User sync failed:', err));
+      }).catch(() => {});
     }
   }, [isAuthenticated, user]);
 
