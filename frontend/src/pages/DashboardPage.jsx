@@ -124,7 +124,6 @@ function DashboardPage() {
       const { data } = await askAI(p);
       setAiAnswer(data);
     } catch (err) {
-      console.error('[ai ask]', err);
       setAiError(errorMessage(err, 'Taskara AI is not available right now.'));
     } finally {
       setAiPending(false);
