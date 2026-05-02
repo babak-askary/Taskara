@@ -2,6 +2,7 @@ const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
 const notificationService = require('../services/notificationService');
 const { RULES: RECURRENCE_RULES, isValidRule, nextDueDate } = require('../utils/recurrence');
+const parseId = require('../utils/parseId');
 
 const STATUSES = ['todo', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -59,13 +60,13 @@ async function getAllTasks(req, res, next) {
       userId: req.user.id,
       status,
       priority,
-      categoryId: category_id ? parseInt(category_id) : undefined,
+      categoryId: category_id ? parseInt(category_id, 10) : undefined,
       dueBefore: due_before,
       dueAfter: due_after,
       sortBy: sort_by,
       sortOrder: sort_order,
-      limit: limit ? parseInt(limit) : 50,
-      offset: offset ? parseInt(offset) : 0,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
     });
     res.json(tasks);
   } catch (err) {
@@ -75,7 +76,9 @@ async function getAllTasks(req, res, next) {
 
 async function getTaskById(req, res, next) {
   try {
-    const task = await taskModel.findById(parseInt(req.params.id), req.user.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
+    const task = await taskModel.findById(taskId, req.user.id);
     if (!task) return res.status(404).json({ message: 'Task not found or no access' });
     res.json(task);
   } catch (err) {
@@ -85,7 +88,8 @@ async function getTaskById(req, res, next) {
 
 async function updateTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     const canEdit = await taskModel.isOwnerOrEditor(taskId, req.user.id);
     if (!canEdit) return res.status(403).json({ message: 'No permission to edit' });
 
@@ -129,7 +133,8 @@ async function updateTask(req, res, next) {
 
 async function deleteTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.isOwner(taskId, req.user.id))) {
       return res.status(403).json({ message: 'Only the owner can delete' });
     }
@@ -149,9 +154,9 @@ async function searchTasks(req, res, next) {
       userId: req.user.id,
       status,
       priority,
-      categoryId: category_id ? parseInt(category_id) : undefined,
-      limit: limit ? parseInt(limit) : 50,
-      offset: offset ? parseInt(offset) : 0,
+      categoryId: category_id ? parseInt(category_id, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
     });
     res.json(tasks);
   } catch (err) {
@@ -161,7 +166,8 @@ async function searchTasks(req, res, next) {
 
 async function addComment(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     const { content } = req.body;
 
     if (!content || typeof content !== 'string' || !content.trim()) {
@@ -189,13 +195,14 @@ async function addComment(req, res, next) {
 
 async function getComments(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.hasAccess(taskId, req.user.id))) {
       return res.status(403).json({ message: 'No access to this task' });
     }
     const comments = await commentModel.findByTaskId(taskId, {
-      limit: req.query.limit ? parseInt(req.query.limit) : 100,
-      offset: req.query.offset ? parseInt(req.query.offset) : 0,
+      limit: req.query.limit ? parseInt(req.query.limit, 10) : 100,
+      offset: req.query.offset ? parseInt(req.query.offset, 10) : 0,
     });
     res.json(comments);
   } catch (err) {
@@ -205,7 +212,8 @@ async function getComments(req, res, next) {
 
 async function deleteComment(req, res, next) {
   try {
-    const commentId = parseInt(req.params.commentId);
+    const commentId = parseId(req.params.commentId);
+    if (commentId === null) return res.status(400).json({ message: 'Invalid comment id' });
     const comment = await commentModel.findById(commentId);
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
     if (comment.user_id !== req.user.id) {

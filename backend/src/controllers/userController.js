@@ -1,12 +1,13 @@
 const userModel = require('../models/userModel');
+const parseId = require('../utils/parseId');
 
 async function getAllUsers(req, res, next) {
   try {
     const { search, limit, offset } = req.query;
     const users = await userModel.findAll({
       search,
-      limit: parseInt(limit) || 20,
-      offset: parseInt(offset) || 0,
+      limit: parseInt(limit, 10) || 20,
+      offset: parseInt(offset, 10) || 0,
     });
     res.json(users);
   } catch (err) {
@@ -16,7 +17,9 @@ async function getAllUsers(req, res, next) {
 
 async function getUserById(req, res, next) {
   try {
-    const user = await userModel.findById(req.params.id);
+    const userId = parseId(req.params.id);
+    if (userId === null) return res.status(400).json({ message: 'Invalid user id' });
+    const user = await userModel.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -28,7 +31,8 @@ async function getUserById(req, res, next) {
 
 async function updateUser(req, res, next) {
   try {
-    const userId = parseInt(req.params.id);
+    const userId = parseId(req.params.id);
+    if (userId === null) return res.status(400).json({ message: 'Invalid user id' });
 
     // Users can only update their own profile
     if (req.user.id !== userId) {

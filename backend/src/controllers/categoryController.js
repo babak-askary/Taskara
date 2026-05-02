@@ -1,4 +1,5 @@
 const categoryModel = require('../models/categoryModel');
+const parseId = require('../utils/parseId');
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -44,7 +45,8 @@ async function getCategories(req, res, next) {
 
 async function updateCategory(req, res, next) {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (id === null) return res.status(400).json({ message: 'Invalid category id' });
     const existing = await categoryModel.findById(id);
     if (!existing) return res.status(404).json({ message: 'Category not found' });
     if (existing.user_id !== req.user.id) {
@@ -63,7 +65,8 @@ async function updateCategory(req, res, next) {
 
 async function deleteCategory(req, res, next) {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseId(req.params.id);
+    if (id === null) return res.status(400).json({ message: 'Invalid category id' });
     const existing = await categoryModel.findById(id);
     if (!existing) return res.status(404).json({ message: 'Category not found' });
     if (existing.user_id !== req.user.id) {
