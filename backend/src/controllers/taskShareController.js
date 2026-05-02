@@ -2,17 +2,20 @@ const taskShareModel = require('../models/taskShareModel');
 const taskModel = require('../models/taskModel');
 const userModel = require('../models/userModel');
 const notificationService = require('../services/notificationService');
+const parseId = require('../utils/parseId');
 
 const VALID_PERMISSIONS = ['view', 'edit'];
 
 // POST /api/tasks/:id/share — share a task with another user (owner only)
 async function shareTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
-    const { user_id: targetUserId, permission = 'view' } = req.body;
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
+    const targetUserId = parseId(String(req.body.user_id));
+    const { permission = 'view' } = req.body;
 
-    if (!targetUserId) {
-      return res.status(400).json({ errors: ['user_id is required'] });
+    if (targetUserId === null) {
+      return res.status(400).json({ errors: ['user_id is required and must be a positive integer'] });
     }
     if (!VALID_PERMISSIONS.includes(permission)) {
       return res.status(400).json({ errors: [`permission must be one of: ${VALID_PERMISSIONS.join(', ')}`] });
@@ -25,7 +28,7 @@ async function shareTask(req, res, next) {
     }
 
     // Don't share with the owner
-    if (parseInt(targetUserId) === req.user.id) {
+    if (targetUserId === req.user.id) {
       return res.status(400).json({ message: 'You cannot share a task with yourself' });
     }
 
@@ -37,13 +40,13 @@ async function shareTask(req, res, next) {
 
     const share = await taskShareModel.share({
       taskId,
-      userId: parseInt(targetUserId),
+      userId: targetUserId,
       permission,
     });
 
     // Notify the target user that a task was shared with them
     const task = await taskModel.findById(taskId, req.user.id);
-    notificationService.notifyTaskShared(parseInt(targetUserId), task);
+    notificationService.notifyTaskShared(targetUserId, task);
 
     res.status(201).json(share);
   } catch (err) {
@@ -54,8 +57,11 @@ async function shareTask(req, res, next) {
 // DELETE /api/tasks/:id/share/:userId — remove a share (owner only)
 async function unshareTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
-    const targetUserId = parseInt(req.params.userId);
+    const taskId = parseId(req.params.id);
+    const targetUserId = parseId(req.params.userId);
+    if (taskId === null || targetUserId === null) {
+      return res.status(400).json({ message: 'Invalid task or user id' });
+    }
 
     const isOwner = await taskModel.isOwner(taskId, req.user.id);
     if (!isOwner) {
@@ -75,7 +81,8 @@ async function unshareTask(req, res, next) {
 // GET /api/tasks/:id/shares — list users a task is shared with (any member can view)
 async function getSharedUsers(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
 
     const hasAccess = await taskModel.hasAccess(taskId, req.user.id);
     if (!hasAccess) {
