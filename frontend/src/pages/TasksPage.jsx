@@ -377,7 +377,11 @@ function TaskRow({ task, onToggle, onDelete }) {
         )}
       </button>
 
-      <span className={`task-pri-bar pri-${task.priority || 'low'}`} />
+      <span
+        className={`task-pri-bar pri-${task.priority || 'low'}`}
+        role="img"
+        aria-label={`${task.priority || 'low'} priority`}
+      />
 
       <Link to={`/tasks/${task.id}`} className="task-main">
         <div className="task-title-row">
