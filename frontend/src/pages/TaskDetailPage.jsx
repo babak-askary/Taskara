@@ -14,6 +14,7 @@ import { errorMessage } from '../api/client';
 import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
 import ShareTaskPanel from '../components/tasks/ShareTaskPanel';
 import TimeTracker from '../components/tasks/TimeTracker';
+import AttachmentList from '../components/tasks/AttachmentList';
 
 const STATUSES = [
   { value: 'todo', label: 'To do' },
@@ -401,6 +402,12 @@ function TaskDetailPage() {
               </button>
             )}
           </section>
+
+          <AttachmentList
+            taskId={task.id}
+            canEdit={canEdit}
+            currentUserEmail={currentUserEmail}
+          />
 
           {/* Comments */}
           <section className="td-card">
