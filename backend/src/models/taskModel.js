@@ -5,22 +5,29 @@ const { buildUpdate, buildWhere } = require('../utils/sql');
 const CREATABLE = [
   'title', 'description', 'status', 'priority', 'due_date',
   'category_id', 'is_recurring', 'recurrence_rule', 'estimated_time',
+  'group_id',
 ];
 
 const UPDATABLE = [
   'title', 'description', 'status', 'priority', 'due_date',
   'category_id', 'is_recurring', 'recurrence_rule', 'time_spent', 'estimated_time',
+  'owner_id',
 ];
 
+// Note on display joins: groups joined for the small "in <slug>" badge that
+// every list-style query renders. Filtering by group is done in the WHERE.
 const SELECT_WITH_META = `
   SELECT DISTINCT t.*,
                   u.name  AS owner_name,
                   c.name  AS category_name,
-                  c.color AS category_color
+                  c.color AS category_color,
+                  g.name  AS group_name,
+                  g.slug  AS group_slug
   FROM tasks t
   LEFT JOIN users u        ON u.id = t.owner_id
   LEFT JOIN categories c   ON c.id = t.category_id
   LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = $1
+  LEFT JOIN groups g       ON g.id = t.group_id
 `;
 
 // Create a task. `fields` is an object with snake_case keys matching DB columns.
@@ -44,7 +51,12 @@ async function create(ownerId, fields) {
   return rows[0];
 }
 
-// Get a single task with owner + category info. Enforces access (owner or shared).
+// Get a single task with owner + category + group info. Access is granted
+// to: the assignee (owner_id), anyone the task is shared with, or any
+// member of the task's group. user_permission is what the caller can do:
+// 'owner' (full edit + delete), 'edit' (edit but not delete), 'view'
+// (read-only). Group owners/admins effectively get 'owner', other group
+// members get 'view' on tasks they don't own.
 async function findById(id, userId) {
   const { rows } = await pool.query(
     `SELECT t.*,
@@ -52,13 +64,23 @@ async function findById(id, userId) {
             u.email AS owner_email,
             c.name  AS category_name,
             c.color AS category_color,
-            COALESCE(ts.permission,
-                     CASE WHEN t.owner_id = $2 THEN 'owner' ELSE NULL END) AS user_permission
+            g.name  AS group_name,
+            g.slug  AS group_slug,
+            gm.role AS group_role,
+            COALESCE(
+              CASE WHEN t.owner_id = $2 THEN 'owner' END,
+              CASE WHEN gm.role IN ('owner','admin') THEN 'owner' END,
+              ts.permission,
+              CASE WHEN gm.role = 'member' THEN 'view' END
+            ) AS user_permission
      FROM tasks t
-     LEFT JOIN users u        ON u.id = t.owner_id
-     LEFT JOIN categories c   ON c.id = t.category_id
-     LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = $2
-     WHERE t.id = $1 AND (t.owner_id = $2 OR ts.user_id = $2)`,
+     LEFT JOIN users u          ON u.id = t.owner_id
+     LEFT JOIN categories c     ON c.id = t.category_id
+     LEFT JOIN task_shares ts   ON ts.task_id = t.id AND ts.user_id = $2
+     LEFT JOIN groups g         ON g.id = t.group_id
+     LEFT JOIN group_members gm ON gm.group_id = t.group_id AND gm.user_id = $2
+     WHERE t.id = $1
+       AND (t.owner_id = $2 OR ts.user_id = $2 OR gm.user_id = $2)`,
     [id, userId]
   );
   return rows[0] || null;
@@ -165,35 +187,67 @@ async function remove(id) {
   await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
 }
 
+// Delete permission: own the task OR be group owner/admin.
 async function isOwner(taskId, userId) {
   const { rows } = await pool.query(
-    'SELECT 1 FROM tasks WHERE id = $1 AND owner_id = $2',
+    `SELECT 1 FROM tasks t
+     LEFT JOIN group_members gm ON gm.group_id = t.group_id AND gm.user_id = $2
+     WHERE t.id = $1
+       AND (t.owner_id = $2 OR gm.role IN ('owner','admin'))`,
     [taskId, userId]
   );
   return rows.length > 0;
 }
 
+// Edit permission: own the task OR have an 'edit' share OR be group
+// owner/admin. Plain group members can only edit tasks they own.
 async function isOwnerOrEditor(taskId, userId) {
   const { rows } = await pool.query(
     `SELECT 1 FROM tasks t
-     LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = $2
-     WHERE t.id = $1 AND (t.owner_id = $2 OR ts.permission = 'edit')`,
+     LEFT JOIN task_shares ts   ON ts.task_id = t.id AND ts.user_id = $2
+     LEFT JOIN group_members gm ON gm.group_id = t.group_id AND gm.user_id = $2
+     WHERE t.id = $1
+       AND (t.owner_id = $2 OR ts.permission = 'edit'
+            OR gm.role IN ('owner','admin'))`,
     [taskId, userId]
   );
   return rows.length > 0;
 }
 
+// View permission: own the task OR be in any share OR be in the group.
 async function hasAccess(taskId, userId) {
   const { rows } = await pool.query(
     `SELECT 1 FROM tasks t
-     LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = $2
-     WHERE t.id = $1 AND (t.owner_id = $2 OR ts.user_id = $2)`,
+     LEFT JOIN task_shares ts   ON ts.task_id = t.id AND ts.user_id = $2
+     LEFT JOIN group_members gm ON gm.group_id = t.group_id AND gm.user_id = $2
+     WHERE t.id = $1
+       AND (t.owner_id = $2 OR ts.user_id = $2 OR gm.user_id = $2)`,
     [taskId, userId]
   );
   return rows.length > 0;
+}
+
+// All tasks within a group, regardless of assignee. Includes the assignee's
+// name + email so the UI can show "for <person>".
+async function findAllByGroup(groupId) {
+  const { rows } = await pool.query(
+    `SELECT t.*,
+            u.name  AS owner_name,
+            u.email AS owner_email,
+            u.avatar_url AS owner_avatar,
+            c.name  AS category_name,
+            c.color AS category_color
+     FROM tasks t
+     LEFT JOIN users u      ON u.id = t.owner_id
+     LEFT JOIN categories c ON c.id = t.category_id
+     WHERE t.group_id = $1
+     ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`,
+    [groupId]
+  );
+  return rows;
 }
 
 module.exports = {
   create, findById, findAll, update, remove, search,
-  isOwner, isOwnerOrEditor, hasAccess,
+  isOwner, isOwnerOrEditor, hasAccess, findAllByGroup,
 };

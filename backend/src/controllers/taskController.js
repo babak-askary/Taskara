@@ -1,5 +1,6 @@
 const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
+const groupMemberModel = require('../models/groupMemberModel');
 const notificationService = require('../services/notificationService');
 const { RULES: RECURRENCE_RULES, isValidRule, nextDueDate } = require('../utils/recurrence');
 const parseId = require('../utils/parseId');
@@ -39,10 +40,36 @@ async function createTask(req, res, next) {
     const errors = validateTask(req.body);
     if (errors.length) return res.status(400).json({ errors });
 
-    const task = await taskModel.create(req.user.id, {
+    // Group context — if group_id is set, the caller must be a member. If
+    // they want to assign the task to someone *else* (assignee_id), they
+    // must be owner/admin of the group. Plain members can only assign to
+    // themselves.
+    let assigneeId = req.user.id;
+    let groupId = null;
+    if (req.body.group_id) {
+      const gid = parseInt(req.body.group_id, 10);
+      if (!gid || gid <= 0) return res.status(400).json({ message: 'Invalid group_id' });
+      const role = await groupMemberModel.findUserRole(gid, req.user.id);
+      if (!role) return res.status(403).json({ message: 'Not a member of this group' });
+      groupId = gid;
+      if (req.body.assignee_id) {
+        const aid = parseInt(req.body.assignee_id, 10);
+        if (!aid || aid <= 0) return res.status(400).json({ message: 'Invalid assignee_id' });
+        if (aid !== req.user.id && role !== 'owner' && role !== 'admin') {
+          return res.status(403).json({ message: 'Only owners and admins can assign tasks to others' });
+        }
+        const targetIsMember = await groupMemberModel.isMember(gid, aid);
+        if (!targetIsMember) return res.status(400).json({ message: 'Assignee is not a member of this group' });
+        assigneeId = aid;
+      }
+    }
+
+    const task = await taskModel.create(assigneeId, {
       ...req.body,
       title: req.body.title.trim(),
+      group_id: groupId,
     });
+    if (groupId) notificationService.notifyTaskShared(assigneeId, task);
     res.status(201).json(task);
   } catch (err) {
     next(err);
@@ -97,6 +124,26 @@ async function updateTask(req, res, next) {
     if (errors.length) return res.status(400).json({ errors });
 
     const before = await taskModel.findById(taskId, req.user.id);
+
+    // Reassignment: only group admins/owners can move a task to a different
+    // user, and the new assignee must already be in the same group.
+    if (req.body.owner_id !== undefined && req.body.owner_id !== before.owner_id) {
+      if (!before.group_id) {
+        return res.status(400).json({ message: 'Reassignment is only available on group tasks' });
+      }
+      const role = await groupMemberModel.findUserRole(before.group_id, req.user.id);
+      if (role !== 'owner' && role !== 'admin') {
+        return res.status(403).json({ message: 'Only group owners and admins can reassign tasks' });
+      }
+      const newAssigneeId = parseInt(req.body.owner_id, 10);
+      if (!await groupMemberModel.isMember(before.group_id, newAssigneeId)) {
+        return res.status(400).json({ message: 'Assignee is not in this group' });
+      }
+    } else if (req.body.owner_id !== undefined) {
+      // No actual change — drop the field so we don't pass it through.
+      delete req.body.owner_id;
+    }
+
     const updated = await taskModel.update(taskId, req.body);
     notificationService.notifyTaskUpdate(updated);
 

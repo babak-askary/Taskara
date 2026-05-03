@@ -35,9 +35,24 @@ async function buildContext(userId) {
   };
 }
 
+// Format a UTC ISO timestamp as a readable local string in the given IANA TZ.
+// Returns null for null/undefined input so callers can decide how to render.
+function fmtLocal(iso, timezone) {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(iso));
+  } catch {
+    return new Date(iso).toISOString();
+  }
+}
+
 // Tiny intent router for the "no API key" fallback. The responses are
 // deterministic but use real user data, so it still feels useful.
-function localReply(prompt, ctx) {
+function localReply(prompt, ctx, timezone) {
   const p = (prompt || '').toLowerCase();
   const { stats, perf, upcoming, overdue, category } = ctx;
 
@@ -47,9 +62,7 @@ function localReply(prompt, ctx) {
       : items.map((t, i) => `${i + 1}. ${mapper(t)}`).join('\n');
 
   const taskLine = (t) => {
-    const due = t.due_date
-      ? ` (due ${new Date(t.due_date).toLocaleDateString()})`
-      : '';
+    const due = t.due_date ? ` (due ${fmtLocal(t.due_date, timezone)})` : '';
     const pri = t.priority ? ` [${t.priority}]` : '';
     return `${t.title}${pri}${due}`;
   };
@@ -114,7 +127,7 @@ function localReply(prompt, ctx) {
 
 // Calls Hugging Face's OpenAI-compatible chat completions router.
 // Returns the reply string, or throws so the caller can fall back.
-async function callHuggingFace(prompt, ctx) {
+async function callHuggingFace(prompt, ctx, timezone) {
   const key = process.env.HUGGINGFACE_API_KEY;
   if (!key) throw new Error('no-api-key');
 
@@ -128,20 +141,24 @@ async function callHuggingFace(prompt, ctx) {
       title: t.title,
       priority: t.priority,
       status: t.status,
-      due_date: t.due_date,
+      due_date: fmtLocal(t.due_date, timezone),
       category: t.category_name,
     })),
     overdue: ctx.overdue.slice(0, 5).map((t) => ({
       title: t.title,
-      due_date: t.due_date,
+      due_date: fmtLocal(t.due_date, timezone),
     })),
+    now: fmtLocal(new Date().toISOString(), timezone),
+    timezone,
   });
 
   const system =
     "You are Taskara's built-in assistant. Answer the user's question about " +
     "their own tasks, using the JSON snapshot below as the ONLY source of truth " +
-    "about their data. Keep replies short, direct, and warm. Prefer bullets or " +
-    "numbered lists over paragraphs. Never invent tasks that aren't in the snapshot.\n\n" +
+    "about their data. All dates are pre-formatted in the user's local timezone — " +
+    "use them verbatim and do not convert. Keep replies short, direct, and warm. " +
+    "Prefer bullets or numbered lists over paragraphs. Never invent tasks that " +
+    "aren't in the snapshot.\n\n" +
     `USER SNAPSHOT:\n${context}`;
 
   const res = await fetch('https://router.huggingface.co/v1/chat/completions', {
@@ -172,19 +189,19 @@ async function callHuggingFace(prompt, ctx) {
   return text;
 }
 
-async function ask(userId, prompt) {
+async function ask(userId, prompt, { timezone = 'UTC' } = {}) {
   const ctx = await buildContext(userId);
 
   if (process.env.HUGGINGFACE_API_KEY) {
     try {
-      const reply = await callHuggingFace(prompt, ctx);
+      const reply = await callHuggingFace(prompt, ctx, timezone);
       return { reply, source: 'huggingface' };
     } catch (err) {
       console.warn('[ai] Hugging Face call failed, falling back to local:', err.message);
     }
   }
 
-  return { reply: localReply(prompt, ctx), source: 'local' };
+  return { reply: localReply(prompt, ctx, timezone), source: 'local' };
 }
 
 module.exports = { ask };

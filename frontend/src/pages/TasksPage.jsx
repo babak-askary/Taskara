@@ -163,7 +163,20 @@ function TasksPage() {
     const prev = task.status;
     setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, status: next } : t)));
     try {
-      await updateTask(task.id, { status: next });
+      const res = await updateTask(task.id, { status: next });
+      const { spawned, ...rest } = res.data || {};
+      setTasks((list) => {
+        let out = list.map((t) => (t.id === rest.id ? { ...t, ...rest } : t));
+        // The backend spawns the next instance when a recurring task is
+        // marked done. Prepend it locally so it appears immediately.
+        if (spawned?.id && !out.some((t) => t.id === spawned.id)) {
+          out = [spawned, ...out];
+        }
+        return out;
+      });
+      if (spawned?.id) {
+        toast.success(`Next “${spawned.title}” scheduled.`);
+      }
     } catch (err) {
       setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, status: prev } : t)));
       toast.error(errorMessage(err, 'Could not update task.'));

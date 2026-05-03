@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { getCategories } from '../api/categoryApi';
 import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
 import ShareTaskPanel from '../components/tasks/ShareTaskPanel';
@@ -25,6 +25,16 @@ function toLocalInputFormat(iso) {
 function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Smart "back" — return to whichever page the user came from (dashboard,
+  // calendar, tasks). For a direct hit on this URL there's no history entry,
+  // so fall back to the tasks list. React Router marks the initial entry's
+  // key as 'default'.
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/tasks');
+  };
   const { user, isAuthenticated, isLoading: authLoading } = useAuth0();
   const toast = useToast();
 
@@ -98,7 +108,7 @@ function TaskDetailPage() {
     if (!window.confirm(`Delete “${task.title}”? This can't be undone.`)) return;
     try {
       await editor.remove();
-      navigate('/tasks');
+      goBack();
     } catch (err) {
       toast.error('Could not delete task.');
     }
@@ -111,7 +121,7 @@ function TaskDetailPage() {
     return (
       <div className="td">
         <div className="td-back">
-          <Link to="/tasks" className="dash-link">← Back to tasks</Link>
+          <button type="button" onClick={goBack} className="dash-link td-back-btn">← Back</button>
         </div>
         <div className="dash-skel td-skel-hero" />
         <div className="dash-skel td-skel-body" />
@@ -123,7 +133,7 @@ function TaskDetailPage() {
     return (
       <div className="td">
         <div className="td-back">
-          <Link to="/tasks" className="dash-link">← Back to tasks</Link>
+          <button type="button" onClick={goBack} className="dash-link td-back-btn">← Back</button>
         </div>
         <div className="tasks-empty">
           <p className="tasks-empty-title">Task not found</p>
@@ -137,7 +147,7 @@ function TaskDetailPage() {
     return (
       <div className="td">
         <div className="td-back">
-          <Link to="/tasks" className="dash-link">← Back to tasks</Link>
+          <button type="button" onClick={goBack} className="dash-link td-back-btn">← Back</button>
         </div>
         <p className="dash-empty dash-error">{loadError}</p>
       </div>
@@ -150,7 +160,7 @@ function TaskDetailPage() {
   return (
     <div className="td">
       <div className="td-back">
-        <Link to="/tasks" className="dash-link">← Back to tasks</Link>
+        <button type="button" onClick={goBack} className="dash-link td-back-btn">← Back</button>
       </div>
 
       <header className="td-header">
@@ -200,6 +210,15 @@ function TaskDetailPage() {
             <>
               <span className="td-meta-dot" aria-hidden="true">·</span>
               <span className="td-readonly">View only</span>
+            </>
+          )}
+          {task.group_slug && (
+            <>
+              <span className="td-meta-dot" aria-hidden="true">·</span>
+              <Link to={`/groups/${task.group_id}`} className="task-group-chip">
+                <span className="task-group-icon" aria-hidden="true">⊞</span>
+                {task.group_slug}
+              </Link>
             </>
           )}
         </div>
@@ -349,7 +368,7 @@ function TaskDetailPage() {
             </div>
 
             <div className="td-field">
-              <label className="td-label" htmlFor="td-estimate">Estimated minutes</label>
+              <label className="td-label" htmlFor="td-estimate">Duration (minutes)</label>
               <input
                 id="td-estimate"
                 className="td-input"
