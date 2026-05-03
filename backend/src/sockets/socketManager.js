@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const pool = require('../config/db');
 const taskModel = require('../models/taskModel');
+const conversationModel = require('../models/conversationModel');
 
 let io;
 
@@ -22,11 +23,10 @@ async function verifySocketToken(token) {
 }
 
 function initializeSocket(server) {
+  const origins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',').map((s) => s.trim()).filter(Boolean);
   io = new Server(server, {
-    cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-      credentials: true,
-    },
+    cors: { origin: origins, credentials: true },
   });
 
   // Auth middleware — token via socket.handshake.auth.token
@@ -65,6 +65,24 @@ function initializeSocket(server) {
     socket.on('leave-task', (taskId) => {
       if (Number.isInteger(taskId) && taskId > 0) {
         socket.leave(`task:${taskId}`);
+      }
+    });
+
+    // Chat room subscription. Verify access before joining so a user can't
+    // peek at someone else's DM by guessing the conversation id.
+    socket.on('chat:join', async (conversationId) => {
+      if (!Number.isInteger(conversationId) || conversationId <= 0) return;
+      try {
+        const result = await conversationModel.findByIdForUser(conversationId, socket.user.id);
+        if (result.allowed) socket.join(`chat:${conversationId}`);
+      } catch (err) {
+        console.error('[socket] chat:join access check failed:', err.message);
+      }
+    });
+
+    socket.on('chat:leave', (conversationId) => {
+      if (Number.isInteger(conversationId) && conversationId > 0) {
+        socket.leave(`chat:${conversationId}`);
       }
     });
 

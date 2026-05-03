@@ -117,7 +117,7 @@ function HomePage() {
   }, [isAuthenticated, isLoading]);
 
   if (isLoading) return <div className="loading">Loading...</div>;
-  if (isAuthenticated) return <Navigate to="/tasks" replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   const signup = () =>
     loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } });
