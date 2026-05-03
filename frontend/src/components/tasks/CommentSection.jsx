@@ -40,7 +40,10 @@ function CommentSection({ taskId, currentUserEmail }) {
     setPosting(true);
     try {
       const { data } = await addComment(taskId, { content });
-      setComments((prev) => [data, ...prev]);
+      // Dedupe by id — the server also emits a task:comment socket event to
+      // the author's task room, and a race between the POST response and the
+      // socket event can otherwise prepend the same comment twice.
+      setComments((prev) => (prev.some((c) => c.id === data.id) ? prev : [data, ...prev]));
       setDraft('');
     } catch (err) {
       toast.error(errorMessage(err, 'Could not post comment.'));

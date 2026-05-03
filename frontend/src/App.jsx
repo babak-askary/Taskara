@@ -5,6 +5,11 @@ import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailPage from './pages/TaskDetailPage';
+import CalendarPage from './pages/CalendarPage';
+import CategoriesPage from './pages/CategoriesPage';
+import GroupsPage from './pages/GroupsPage';
+import GroupDetailPage from './pages/GroupDetailPage';
+import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -20,6 +25,12 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="tasks" element={<TasksPage />} />
             <Route path="tasks/:id" element={<TaskDetailPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="groups" element={<GroupsPage />} />
+            <Route path="groups/:id" element={<GroupDetailPage />} />
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="chat/:id" element={<ChatPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
