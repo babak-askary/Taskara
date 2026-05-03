@@ -71,6 +71,14 @@ export function leaveTask(taskId) {
   if (socket?.connected) socket.emit('leave-task', Number(taskId));
 }
 
+export function joinChat(conversationId) {
+  if (socket?.connected) socket.emit('chat:join', Number(conversationId));
+}
+
+export function leaveChat(conversationId) {
+  if (socket?.connected) socket.emit('chat:leave', Number(conversationId));
+}
+
 // Subscribe to a server-pushed event. Registers the listener immediately if
 // the socket is connected; otherwise queues it so it'll attach on next
 // connect. Returns an unsubscribe function that cleans up both places.

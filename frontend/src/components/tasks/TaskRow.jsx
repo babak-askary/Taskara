@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
-import { fmtShort, isToday, isOverdue } from '../../utils/dateFormat';
+import { fmtFriendly, isToday, isOverdue, recurrenceLabel } from '../../utils/dateFormat';
 
 function TaskRow({ task, onToggle, onDelete }) {
   const overdue = isOverdue(task.due_date, task.status);
   const today = isToday(task.due_date);
   const done = task.status === 'done';
   const inProgress = task.status === 'in_progress';
+  const recurringLabel = task.is_recurring && !done
+    ? recurrenceLabel(task.recurrence_rule, task.due_date)
+    : null;
 
   return (
     <li className={`task-row ${done ? 'is-done' : ''} ${overdue ? 'is-overdue' : ''}`}>
@@ -43,6 +46,17 @@ function TaskRow({ task, onToggle, onDelete }) {
               ↻
             </span>
           )}
+          {task.group_slug && (
+            <Link
+              to={`/groups/${task.group_id}`}
+              className="task-group-chip"
+              onClick={(e) => e.stopPropagation()}
+              title={`In group: ${task.group_name}`}
+            >
+              <span className="task-group-icon" aria-hidden="true">⊞</span>
+              {task.group_slug}
+            </Link>
+          )}
           {inProgress && <span className="task-chip task-chip-progress">In progress</span>}
         </div>
         {task.description && !done && <p className="task-desc">{task.description}</p>}
@@ -61,12 +75,20 @@ function TaskRow({ task, onToggle, onDelete }) {
             {task.category_name}
           </span>
         )}
+        {recurringLabel && (
+          <span
+            className="task-due is-recurring-label"
+            title={recurringLabel}
+          >
+            {recurringLabel}
+          </span>
+        )}
         <span
           className={`task-due ${
             !task.due_date ? 'is-none' : overdue ? 'is-overdue' : today ? 'is-today' : ''
           }`}
         >
-          {task.due_date ? fmtShort(task.due_date) : 'No date'}
+          {task.due_date ? fmtFriendly(task.due_date) : 'No date'}
         </span>
       </div>
 

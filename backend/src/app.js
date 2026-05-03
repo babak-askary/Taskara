@@ -11,6 +11,8 @@ const userRoutes = require('./routes/userRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const groupRoutes = require('./routes/groupRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const { errorHandler } = require('./middleware/errorHandler');
 const { sanitizeBody } = require('./middleware/validateInput');
@@ -20,7 +22,11 @@ const app = express();
 
 // Global middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }));
+// FRONTEND_URL can be a single URL or a comma-separated list (so previews
+// + production can both call this API).
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeBody);
@@ -33,6 +39,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check (not rate-limited, not protected — used by monitors).
 // Returns 503 with details if the DB is unreachable so a load balancer or
