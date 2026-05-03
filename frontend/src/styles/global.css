@@ -6114,3 +6114,203 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
     box-shadow: revert;
   }
 }
+
+/* ====================================================================
+   Mobile bottom tab bar (native-app feel)
+   ==================================================================== */
+
+.tab-bar { display: none; }
+
+@media (max-width: 720px) {
+  /* Hide the top nav for signed-in users — bottom tab bar takes over.
+     Guests still see the top nav so they can sign up / log in. */
+  .site-nav.site-nav-auth { display: none; }
+
+  .tab-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0));
+    background: rgba(10, 10, 12, 0.86);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-top: 1px solid var(--border);
+  }
+
+  .tab-bar-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 6px 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: color 0.12s ease, background 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-bar-btn:active { background: rgba(255, 255, 255, 0.06); }
+  .tab-bar-btn.is-active { color: var(--accent); }
+  .tab-bar-btn.is-active .tab-bar-icon {
+    transform: translateY(-1px);
+  }
+  .tab-bar-icon {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .tab-bar-icon svg { width: 26px; height: 26px; }
+  .tab-bar-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* Reserve space at the bottom of every page so content doesn't get
+     covered by the tab bar. ~64px tab bar height + safe-area. */
+  body { padding-bottom: 0; }
+  .dash, .tasks, .td, .profile,
+  .gp-detail, .cat-page, .cal-page, .chat-page {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0)) !important;
+  }
+  /* Chat page is full-bleed and uses 100dvh, so add space for tab bar
+     by shrinking its layout instead of padding the page. */
+  .chat-page.is-mobile {
+    padding-bottom: 0 !important;
+  }
+  .chat-layout {
+    height: calc(100svh - 56px - 64px) !important;
+    height: calc(100dvh - 56px - 64px) !important;
+  }
+  .chat-input-row {
+    margin-bottom: 0;
+    padding-bottom: 10px;
+  }
+}
+
+/* ====================================================================
+   "More" bottom sheet (mobile secondary nav)
+   ==================================================================== */
+
+.more-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  animation: qc-fade 0.18s ease;
+}
+.more-sheet {
+  width: 100%;
+  background: linear-gradient(180deg, #14141a, #0a0a0d);
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0));
+  position: relative;
+  animation: qc-sheet-up 0.24s cubic-bezier(0.32, 0.72, 0.34, 1);
+}
+.more-sheet-grabber {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0 auto 14px;
+}
+.more-sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.more-sheet-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #5e5ce6);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  overflow: hidden;
+  flex: 0 0 44px;
+}
+.more-sheet-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.more-sheet-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.more-sheet-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.more-sheet-email {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-sheet-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.more-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.more-sheet-item:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.more-sheet-item-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+.more-sheet-logout {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding-top: 18px;
+  color: #ff7590;
+}
+.more-sheet-logout .more-sheet-item-icon { color: #ff7590; }
