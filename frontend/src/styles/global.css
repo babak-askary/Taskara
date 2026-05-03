@@ -6502,3 +6502,160 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
     min-height: 360px;
   }
 }
+
+/* ====================================================================
+   Calendar mobile — locked viewport, only inner grid scrolls.
+   Overrides the previous compact rules with cleaner visuals.
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* Page is fixed to the viewport, leaving room for the tab bar.
+     Nothing on the page scrolls — only the hour grid inside. */
+  .cal-page {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0));
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+    gap: 0 !important;
+  }
+
+  /* Polished header: subtle bottom divider, generous touch targets,
+     monochrome title (gradient looked muddy at 19 px). */
+  .cal-page-head {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex: 0 0 auto;
+    gap: 8px !important;
+    padding: 14px 14px 10px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .cal-page-eyebrow,
+  .cal-page-year { display: none !important; }
+  .cal-page-headline { flex: 1; min-width: 0; }
+  .cal-page-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+    color: var(--text) !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--text) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cal-page-controls {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    gap: 6px !important;
+    justify-content: flex-end !important;
+  }
+
+  /* Pill-shaped nav group, soft fill, tight buttons */
+  .cal-nav-group {
+    padding: 2px !important;
+    gap: 0 !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-radius: 999px !important;
+  }
+  .cal-nav-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    color: var(--text) !important;
+  }
+  .cal-nav-btn:hover { background: rgba(255, 255, 255, 0.06) !important; }
+  .cal-nav-btn svg { width: 16px; height: 16px; }
+  .cal-today-btn {
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+  .cal-today-btn.is-current,
+  .cal-today-btn:disabled {
+    box-shadow: 0 2px 8px rgba(10, 132, 255, 0.35) !important;
+  }
+
+  /* Round + button, primary blue, soft glow */
+  .cal-new-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    flex: 0 0 auto !important;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(10, 132, 255, 0.4) !important;
+  }
+  .cal-new-btn span { display: none; }
+  .cal-new-btn svg { margin: 0; width: 18px; height: 18px; }
+  .cal-new-btn:active { transform: scale(0.94); }
+
+  /* Hide stats + hint — they're on desktop only now */
+  .cal-stats,
+  .cal-page-hint { display: none !important; }
+
+  /* The calendar card becomes a flex column that fills remaining height.
+     Day strip stays fixed at top of card; only the scroll wrapper scrolls. */
+  .week-cal {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  /* Drop the decorative radial-gradient overlay on mobile — looked
+     muddy when squeezed against the day strip. */
+  .week-cal::before { display: none !important; }
+  .week-cal > * { z-index: auto; }
+
+  .week-cal-strip {
+    flex: 0 0 auto;
+    padding: 8px 10px 10px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .week-cal-strip-day {
+    min-width: 52px;
+    padding: 9px 4px 7px;
+    border-radius: 14px;
+  }
+  .week-cal-strip-dow { font-size: 10px; }
+  .week-cal-strip-dnum { font-size: 17px; }
+
+  /* The grid scroller takes the remaining height and is the ONLY thing
+     on the page that scrolls. */
+  .week-cal-scroll {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    margin: 0 !important;
+  }
+
+  /* Hide the bottom undated-tasks footer on mobile — it would push the
+     grid below the fold. Users can still see undated tasks via /tasks. */
+  .week-cal-undated { display: none !important; }
+}
+
+/* The compact rules in the previous block can stay — these `!important`
+   later rules win where they conflict, but specific values like the
+   30 px nav button and icon-only "+" button are now unified here. */
