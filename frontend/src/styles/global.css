@@ -13,9 +13,18 @@
   --text-muted: #6e6e73;
   --accent: #0a84ff;
   --accent-hover: #409cff;
+
+  /* Safe-area insets for iPhone notch + home indicator. Falls back to 0 on
+     non-notched devices via env() default. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
+html { -webkit-text-size-adjust: 100%; }
 html, body, #root { min-height: 100%; }
+html, body { overflow-x: hidden; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
@@ -24,10 +33,44 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.01em;
+  /* Mobile-app feel: prevent the rubber-band scroll exposing the body
+     background, kill text-selection on UI chrome, allow input selection. */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a { text-decoration: none; color: inherit; }
-button { font: inherit; cursor: pointer; }
+button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+/* iOS auto-zooms when an input's font-size is < 16px on focus. Force every
+   form control to >=16px and override per-component if needed (only on
+   mobile — desktop keeps the smaller, denser sizes). */
+@media (max-width: 720px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Smoother native momentum scroll inside any scrollable region */
+.app-shell, .app-main, [class*="-scroll"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Allow text selection inside content areas but disable on UI chrome */
+.site-nav, .nav-actions, .nav-link, .nav-toggle, .nav-primary-btn, .nav-ghost-btn,
+.btn-primary, .btn-secondary,
+.task-check, .task-delete, .task-pri-bar,
+.cal-nav-btn, .cal-today-btn, .cal-new-btn,
+.chat-side-btn, .chat-send,
+.gp-task-assignee, .gp-role,
+.cat-del, .cat-preset,
+.qe-seg, .qc-actions button,
+.week-cal-strip-day, .week-cal-task-handle {
+  -webkit-user-select: none;
+  user-select: none;
+}
 
 /* ----- Shell + nav -------------------------------------------------- */
 
@@ -4628,6 +4671,59 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
   .qc-modal { padding: 22px 18px 18px; }
 }
 
+/* Bottom-sheet variant on mobile — slides up from the bottom edge with a
+   grabber handle, hugs the bottom safe-area, never anchored to a cursor. */
+@media (max-width: 720px) {
+  .qc-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .qc-backdrop-anchored {
+    /* Force-flatten anchored variant into a bottom sheet too */
+    align-items: flex-end !important;
+    display: flex !important;
+    padding: 0 !important;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .qc-modal,
+  .qc-modal-anchored {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    border-radius: 22px 22px 0 0;
+    padding: 22px 18px calc(18px + env(safe-area-inset-bottom, 0));
+    max-height: 92vh;
+    max-height: 92dvh;
+    overflow-y: auto;
+    animation: qc-sheet-up 0.24s cubic-bezier(0.32, 0.72, 0.34, 1);
+    opacity: 1 !important;
+  }
+  /* Drag-handle pill on top of sheets */
+  .qc-modal::after,
+  .qc-modal-anchored::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+  .qc-modal-anchored .qc-head { margin-top: 6px; }
+  .qc-form { grid-template-columns: 1fr; gap: 12px; }
+}
+@keyframes qc-sheet-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
 /* === Quick-edit task (popover variant of the modal) === */
 .qe-modal { width: min(440px, 100%); }
 .qc-modal-anchored.qe-modal { width: 420px; }
@@ -5823,11 +5919,198 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
   border-radius: 999px;
 }
 
+/* Mobile chat: full-screen single-pane, no border-radius on the layout
+   (so it edge-to-edges like a native chat app), and safe-area aware. */
 @media (max-width: 720px) {
+  .chat-page { padding: 0 !important; padding-bottom: env(safe-area-inset-bottom, 0) !important; }
+  .chat-page.is-mobile { padding-top: 0 !important; }
+  .chat-page-head { display: none; }
+
   .chat-layout {
     grid-template-columns: 1fr;
-    height: calc(100vh - 200px);
+    /* Use small-vh for the dynamic mobile bar. Falls back to 100vh. */
+    height: calc(100svh - 56px);
+    height: calc(100dvh - 56px);
+    min-height: 0;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
   }
-  .chat-side { border-right: none; border-bottom: 1px solid var(--border); max-height: 220px; }
-  .chat-msg { max-width: 90%; }
+
+  .chat-side {
+    border-right: none;
+    border-bottom: none;
+    max-height: none;
+    height: 100%;
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0));
+  }
+  .chat-side-list { gap: 4px; }
+  .chat-side-btn { padding: 10px 12px; }
+  .chat-side-avatar { width: 40px; height: 40px; flex-basis: 40px; }
+  .chat-side-name { font-size: 15px; }
+  .chat-side-sub { font-size: 13px; }
+
+  /* The thread view in single-pane mode replaces the sidebar entirely */
+  .chat-layout.on-thread .chat-side { display: none; }
+  .chat-main { height: 100%; }
+
+  .chat-thread-head {
+    padding: 12px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(10, 10, 12, 0.78);
+  }
+  .chat-thread-back {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    padding: 4px 6px 4px 0;
+    margin-left: -6px;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  .chat-thread-back:active { transform: scale(0.92); }
+
+  .chat-scroll {
+    padding: 14px 12px 8px;
+    gap: 4px;
+  }
+  .chat-msg { max-width: 86%; }
+  .chat-msg-bubble { font-size: 15px; }
+
+  .chat-input-row {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0));
+    background: rgba(10, 10, 12, 0.92);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .chat-input { font-size: 16px; min-height: 40px; padding: 11px 14px; border-radius: 18px; }
+  .chat-send { height: 40px; padding: 0 16px; }
+}
+
+/* Hide the back button on desktop since the sidebar is always visible */
+@media (min-width: 721px) {
+  .chat-thread-back { display: none; }
+}
+
+.chat-thread-back {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  padding: 4px 8px 4px 0;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* ====================================================================
+   Mobile-app polish — final pass
+   Safe-area insets on main containers, larger touch targets, smoother
+   feel, and a few specific page fixes the earlier rules missed.
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* Respect iPhone home-indicator on every long-scroll page */
+  .dash,
+  .tasks,
+  .td,
+  .profile {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0)) !important;
+  }
+
+  /* Narrower side padding looks more native on phones */
+  .dash, .tasks, .td, .profile {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* Section/title sizes — large display headlines crowd tiny screens */
+  .tasks-title { font-size: 1.85rem !important; }
+  .dash-greeting { font-size: 1.7rem !important; line-height: 1.15; }
+  .cal-page-title { font-size: 26px !important; line-height: 1.2; }
+
+  /* Touch-target floor: small icon buttons should be ≥40px */
+  .task-delete,
+  .nav-toggle,
+  .cal-nav-btn,
+  .cat-del,
+  .week-cal-strip-day {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .nav-toggle { width: 44px; height: 44px; }
+
+  /* Group page polish — keep the 2-column board members panel from
+     squashing into a sliver next to the wide board on mid-width tablets */
+  .gp-detail-grid { gap: 14px; }
+  .gp-detail { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0)); }
+
+  /* Categories page — give breathing room and increase tappable rows */
+  .cat-row { padding: 12px 14px 12px 12px; }
+  .cat-name-btn { padding: 10px 6px; font-size: 16px; }
+
+  /* Calendar page header on mobile — make the New-task button full-width */
+  .cal-new-btn { flex: 1; justify-content: center; padding: 0 16px; }
+
+  /* Buttons in modals: bigger tap targets */
+  .btn-primary, .btn-secondary {
+    min-height: 42px;
+    padding: 10px 18px;
+  }
+
+  /* Smoother momentum on every horizontally scrollable strip */
+  .week-cal-strip,
+  .gp-board-scroll,
+  .cat-presets {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Smooth out the overall feel — every interactive element gets a tiny
+   active-scale on touch so it feels like a native button. */
+@media (max-width: 720px) and (hover: none) {
+  .btn-primary:active,
+  .btn-secondary:active,
+  .nav-link:active,
+  .nav-ghost-btn:active,
+  .nav-primary-btn:active,
+  .cal-new-btn:active,
+  .cal-today-btn:active,
+  .cal-nav-btn:active,
+  .tasks-add-btn:active,
+  .task-check:active,
+  .gp-card:active,
+  .chat-side-btn:active,
+  .chat-send:active,
+  .qe-seg:active,
+  .week-cal-strip-day:active,
+  .cat-preset:active {
+    transform: scale(0.96);
+    transition: transform 0.08s ease-out;
+  }
+}
+
+/* Hide hover-only effects on touch devices so we don't get sticky
+   hover-states after a tap. */
+@media (hover: none) and (pointer: coarse) {
+  .gp-card:hover,
+  .cat-row:hover,
+  .task-row:hover,
+  .week-cal-task:hover,
+  .gp-board-task:hover,
+  .qc-input:hover,
+  .nav-link:hover,
+  .dash-task-link:hover {
+    transform: none !important;
+    background: revert;
+    border-color: revert;
+    box-shadow: revert;
+  }
 }
