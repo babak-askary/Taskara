@@ -6,6 +6,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import StatCards from '../components/dashboard/StatCards';
 import SearchPanel from '../components/dashboard/SearchPanel';
 import AIAssistant from '../components/dashboard/AIAssistant';
+import WeekOverview from '../components/dashboard/WeekOverview';
 
 function greetingFor(date = new Date()) {
   const h = date.getHours();
@@ -66,6 +67,7 @@ function DashboardPage() {
       </header>
 
       <AIAssistant />
+      <WeekOverview tasks={tasks} loading={loading} />
       <SearchPanel currentUserEmail={user?.email} />
 
       <StatCards loading={loading} dueToday={dueToday} stats={stats} perf={perf} />

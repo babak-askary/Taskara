@@ -66,6 +66,10 @@ function Navbar() {
           <>
             <Link to="/dashboard" className="nav-link" onClick={closeMenu}>Dashboard</Link>
             <Link to="/tasks" className="nav-link" onClick={closeMenu}>Tasks</Link>
+            <Link to="/calendar" className="nav-link" onClick={closeMenu}>Calendar</Link>
+            <Link to="/groups" className="nav-link" onClick={closeMenu}>Groups</Link>
+            <Link to="/chat" className="nav-link" onClick={closeMenu}>Chat</Link>
+            <Link to="/categories" className="nav-link" onClick={closeMenu}>Categories</Link>
             <Link to="/profile" className="user-name nav-link" onClick={closeMenu}>{user.name}</Link>
             <button className="nav-ghost-btn" onClick={() => { closeMenu(); handleLogout(); }}>Logout</button>
           </>
