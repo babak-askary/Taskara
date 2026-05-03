@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { errorMessage } from '../../api/client';
 import { getShares, shareTask, unshareTask } from '../../api/taskShareApi';
 import { searchUsers } from '../../api/userApi';
+import { useDebounce } from '../../hooks/useDebounce';
 
 function ShareTaskPanel({ taskId }) {
   const [shares, setShares] = useState([]);
@@ -9,7 +10,7 @@ function ShareTaskPanel({ taskId }) {
   const [loadError, setLoadError] = useState(null);
 
   const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebounce(query.trim(), 250);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
@@ -34,12 +35,6 @@ function ShareTaskPanel({ taskId }) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [taskId]);
-
-  // Debounce search input
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 250);
-    return () => clearTimeout(t);
-  }, [query]);
 
   // Search users when debounced query changes
   useEffect(() => {
@@ -76,7 +71,6 @@ function ShareTaskPanel({ taskId }) {
       const res = await getShares(taskId);
       setShares(res.data || []);
       setQuery('');
-      setDebounced('');
       setResults([]);
       inputRef.current?.focus();
     } catch (err) {

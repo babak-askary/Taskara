@@ -1,13 +1,17 @@
 const userModel = require('../models/userModel');
 const parseId = require('../utils/parseId');
 
+const MAX_LIMIT = 200;
+
 async function getAllUsers(req, res, next) {
   try {
     const { search, limit, offset } = req.query;
+    const parsedLimit = parseInt(limit, 10);
+    const parsedOffset = parseInt(offset, 10);
     const users = await userModel.findAll({
       search,
-      limit: parseInt(limit, 10) || 20,
-      offset: parseInt(offset, 10) || 0,
+      limit: Math.max(1, Math.min(MAX_LIMIT, Number.isFinite(parsedLimit) ? parsedLimit : 20)),
+      offset: Math.max(0, Number.isFinite(parsedOffset) ? parsedOffset : 0),
     });
     res.json(users);
   } catch (err) {
