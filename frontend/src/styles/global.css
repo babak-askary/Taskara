@@ -6727,3 +6727,181 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
     padding: 10px 12px !important;
   }
 }
+
+/* ====================================================================
+   Groups mobile polish
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* The earlier calendar block hid `.cal-stats` globally. Re-show it on
+     non-calendar pages (group detail, etc.) — only the actual calendar
+     page needs it hidden. */
+  .gp-detail .cal-stats { display: flex !important; }
+
+  /* ===== /groups list ===== */
+  .gp { padding: 10px 14px 0 !important; }
+  .gp .cal-page-head { padding: 6px 0 10px !important; }
+  .gp .cal-page-eyebrow { margin: 0 0 6px !important; font-size: 10px !important; }
+  .gp .cal-page-title {
+    font-size: 22px !important;
+    line-height: 1.15 !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--text) !important;
+    color: var(--text) !important;
+  }
+  .gp .cal-page-year { font-size: 12px !important; }
+  .gp .cal-new-btn {
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    flex: 0 0 auto !important;
+  }
+  .gp .cal-new-btn span { display: none !important; }
+
+  /* Create form: cleaner padding */
+  .gp-create { padding: 16px 14px; gap: 10px; }
+
+  /* Search input with results */
+  .gp-search { margin-bottom: 18px; }
+
+  /* Section title */
+  .gp-section-title { font-size: 11px; }
+
+  /* Group cards: stack actions under body so the "Open" button doesn't
+     squeeze the description on narrow screens */
+  .gp-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 14px 14px !important;
+    border-radius: 14px !important;
+  }
+  .gp-card-body { width: 100%; }
+  .gp-card-head {
+    gap: 8px !important;
+  }
+  .gp-card-name { font-size: 16px !important; }
+  .gp-card-desc { font-size: 13px !important; -webkit-line-clamp: 2 !important; }
+  .gp-card-meta { font-size: 12px !important; }
+  .gp-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .gp-card-actions .btn-secondary,
+  .gp-card-actions .btn-primary {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* ===== /groups/:id detail ===== */
+  .gp-detail { padding: 8px 14px 0 !important; }
+  .gp-detail .dash-link { font-size: 13px; padding: 4px 0; display: inline-block; }
+
+  /* Header: title prominent, controls wrap below if needed */
+  .gp-detail-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+    padding: 4px 0 0 !important;
+  }
+  .gp-detail .cal-page-eyebrow { font-size: 10px; margin: 0 0 6px !important; }
+  .gp-detail .cal-page-eyebrow-pill {
+    font-size: 9px;
+    padding: 2px 8px;
+  }
+  .gp-detail .cal-page-title {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--text) !important;
+    color: var(--text) !important;
+  }
+  .gp-detail .cal-page-year { font-size: 13px !important; }
+  .gp-detail-desc { font-size: 13px; margin: 8px 0 0; }
+  .gp-detail .cal-page-controls {
+    width: 100%;
+    justify-content: stretch;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+  .gp-detail .cal-new-btn {
+    flex: 1;
+    width: auto !important;
+    height: 38px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    justify-content: center;
+  }
+  .gp-detail .cal-new-btn span { display: inline; }
+  .gp-detail .gp-danger,
+  .gp-detail .btn-secondary {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* 4-stat row on group detail: smaller values, allow it to fit */
+  .gp-detail .cal-stats {
+    padding: 12px 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 14px !important;
+    gap: 0 !important;
+  }
+  .gp-detail .cal-stat-value { font-size: 20px !important; }
+  .gp-detail .cal-stat-label { font-size: 9px !important; letter-spacing: 0.06em !important; }
+  .gp-detail .cal-stat-divider { margin: 0 8px !important; height: 26px !important; }
+
+  /* Detail grid stacks (already at 900px); just tighten paddings */
+  .gp-detail-grid { gap: 12px !important; }
+
+  /* Tasks card / Members card: edge-to-edge feel on phones */
+  .gp-tasks-card,
+  .gp-members-card { padding: 16px 14px !important; border-radius: 16px !important; }
+
+  /* Quick-add task form: stack the assignee select below */
+  .gp-add { flex-wrap: wrap; }
+  .gp-add .tasks-add-input { flex: 1 1 100%; order: 1; }
+  .gp-add-assignee { order: 2; flex: 1; min-width: 120px; }
+  .gp-add .tasks-add-btn { order: 3; }
+
+  /* Group task rows tightened */
+  .gp-task { padding: 10px 10px !important; gap: 8px !important; }
+  .gp-task-assignee { font-size: 11px !important; padding: 2px 8px 2px 2px !important; }
+  .gp-task-assignee-name,
+  .gp-task-assignee-select { font-size: 11px !important; }
+
+  /* Members panel rows tighter */
+  .gp-member { padding: 10px 8px !important; gap: 8px !important; }
+  .gp-member-name { font-size: 14px !important; }
+  .gp-member-email { font-size: 12px !important; }
+  .gp-role-select { font-size: 11px !important; padding: 4px 6px !important; }
+
+  /* Group board (the schedule swimlane) — keep it horizontally scrollable
+     but tighten visuals. Member column shrinks so users can see at least
+     2-3 day columns at once. */
+  .gp-board { padding: 12px 12px 10px !important; }
+  .gp-board-grid {
+    grid-template-columns: 132px repeat(7, minmax(96px, 1fr)) !important;
+    min-width: 600px;
+  }
+  .gp-board-day-head { padding: 8px 4px; }
+  .gp-board-dnum { font-size: 15px; }
+  .gp-board-member {
+    padding: 10px 10px !important;
+    gap: 8px !important;
+  }
+  .gp-board-member-name { font-size: 12px !important; }
+  .gp-board-member .gp-role { font-size: 8px; padding: 1px 5px; }
+  .gp-board-cell { padding: 5px 4px !important; min-height: 50px; }
+  .gp-board-task {
+    padding: 4px 6px 4px 7px !important;
+    font-size: 10px !important;
+  }
+  .gp-board-task-time { font-size: 9px; }
+
+  /* Legend wraps cleanly */
+  .gp-board-legend { gap: 10px 14px; padding-top: 10px; font-size: 10px; }
+}
