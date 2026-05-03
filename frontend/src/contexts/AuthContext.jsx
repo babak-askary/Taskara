@@ -9,12 +9,18 @@ export function AuthSetup() {
   const { getAccessTokenSilently, isAuthenticated, user } = useAuth0();
   const hasSynced = useRef(false);
 
+  // getAccessTokenSilently is a fresh reference every render, which would
+  // re-run any effect that depended on it (and bounce the socket on every
+  // render). Capture it in a ref and read through that instead.
+  const getTokenRef = useRef(getAccessTokenSilently);
+  useEffect(() => { getTokenRef.current = getAccessTokenSilently; });
+
   // Set the token getter so axios can attach it to requests
   useEffect(() => {
     if (isAuthenticated) {
-      setTokenGetter(() => getAccessTokenSilently());
+      setTokenGetter(() => getTokenRef.current());
     }
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated]);
 
   // Sync Auth0 user to our database on first login
   useEffect(() => {
@@ -31,12 +37,12 @@ export function AuthSetup() {
   // Open / close the realtime socket alongside the auth session
   useEffect(() => {
     if (isAuthenticated) {
-      connectSocket(() => getAccessTokenSilently());
+      connectSocket(() => getTokenRef.current());
     } else {
       disconnectSocket();
     }
     return () => disconnectSocket();
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated]);
 
   return null;
 }
