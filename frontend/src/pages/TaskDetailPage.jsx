@@ -15,12 +15,8 @@ import { joinTask, leaveTask, onSocketEvent } from '../services/socket';
 import ShareTaskPanel from '../components/tasks/ShareTaskPanel';
 import TimeTracker from '../components/tasks/TimeTracker';
 import AttachmentList from '../components/tasks/AttachmentList';
-
-const STATUSES = [
-  { value: 'todo', label: 'To do' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'done', label: 'Done' },
-];
+import { relativeTime } from '../utils/dateFormat';
+import { STATUSES } from '../constants/taskOptions';
 
 function toLocalInputFormat(iso) {
   if (!iso) return '';
@@ -30,18 +26,6 @@ function toLocalInputFormat(iso) {
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
     `T${pad(d.getHours())}:${pad(d.getMinutes())}`
   );
-}
-
-function relativeTime(iso) {
-  if (!iso) return '';
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
 }
 
 function TaskDetailPage() {

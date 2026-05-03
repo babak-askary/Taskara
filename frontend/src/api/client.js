@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -23,9 +23,17 @@ export function errorMessage(err, fallback = 'Something went wrong.') {
 
 // Token getter — set by AuthContext when Auth0 is ready
 let getAccessToken = null;
+let onUnauthorized = null;
 
 export function setTokenGetter(fn) {
   getAccessToken = fn;
+}
+
+// Called by the response interceptor on a 401 — set by AuthContext to
+// trigger Auth0 logout so an expired session doesn't silently fail every
+// subsequent call.
+export function setUnauthorizedHandler(fn) {
+  onUnauthorized = fn;
 }
 
 // Attach Auth0 access token to every request
@@ -40,5 +48,17 @@ apiClient.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// On 401 (token expired / invalidated), kick the user back through login.
+// The unauthorized handler is wired up by AuthContext.
+apiClient.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err?.response?.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
+    return Promise.reject(err);
+  }
+);
 
 export default apiClient;
