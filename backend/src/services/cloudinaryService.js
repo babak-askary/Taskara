@@ -1,5 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 
+const UPLOAD_TIMEOUT_MS = 30_000; // 30s — handler request time budget
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -17,8 +19,10 @@ function isConfigured() {
 
 // Upload a buffer (from multer.memoryStorage) to Cloudinary. Returns
 // { secure_url, public_id, bytes, resource_type, format } on success.
+// Bounded by UPLOAD_TIMEOUT_MS so a hung Cloudinary connection can't pin
+// an Express request open indefinitely.
 function uploadBuffer(buffer, { folder = 'taskara', filename } = {}) {
-  return new Promise((resolve, reject) => {
+  const upload = new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
@@ -34,6 +38,12 @@ function uploadBuffer(buffer, { folder = 'taskara', filename } = {}) {
     );
     stream.end(buffer);
   });
+
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Cloudinary upload timed out after ${UPLOAD_TIMEOUT_MS}ms`)), UPLOAD_TIMEOUT_MS)
+  );
+
+  return Promise.race([upload, timeout]);
 }
 
 async function destroy(publicId, resourceType = 'image') {
