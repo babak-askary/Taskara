@@ -2,33 +2,15 @@ const pool = require('../config/db');
 const { buildUpdate } = require('../utils/sql');
 
 const UPDATABLE = ['name', 'avatar_url'];
-
-async function findByAuth0Id(auth0Id) {
-  const { rows } = await pool.query('SELECT * FROM users WHERE auth0_id = $1', [auth0Id]);
-  return rows[0] || null;
-}
+const PUBLIC_COLUMNS = 'id, email, name, avatar_url, created_at';
+const FULL_COLUMNS = 'id, auth0_id, email, name, avatar_url, created_at, updated_at';
 
 async function findById(id) {
   const { rows } = await pool.query(
-    'SELECT id, email, name, avatar_url, created_at FROM users WHERE id = $1',
+    `SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = $1`,
     [id]
   );
   return rows[0] || null;
-}
-
-async function findByEmail(email) {
-  const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-  return rows[0] || null;
-}
-
-async function create({ auth0Id, email, name, avatarUrl }) {
-  const { rows } = await pool.query(
-    `INSERT INTO users (auth0_id, email, name, avatar_url)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [auth0Id, email, name, avatarUrl]
-  );
-  return rows[0];
 }
 
 async function update(id, fields) {
@@ -41,7 +23,7 @@ async function update(id, fields) {
 async function findAll({ search, limit = 20, offset = 0 } = {}) {
   if (search) {
     const { rows } = await pool.query(
-      `SELECT id, email, name, avatar_url, created_at
+      `SELECT ${PUBLIC_COLUMNS}
        FROM users
        WHERE name ILIKE $1 OR email ILIKE $1
        ORDER BY name ASC
@@ -51,7 +33,7 @@ async function findAll({ search, limit = 20, offset = 0 } = {}) {
     return rows;
   }
   const { rows } = await pool.query(
-    `SELECT id, email, name, avatar_url, created_at
+    `SELECT ${PUBLIC_COLUMNS}
      FROM users
      ORDER BY name ASC
      LIMIT $1 OFFSET $2`,
@@ -69,10 +51,10 @@ async function findOrCreate({ auth0Id, email, name, avatarUrl }) {
        name = EXCLUDED.name,
        avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
        updated_at = NOW()
-     RETURNING *`,
+     RETURNING ${FULL_COLUMNS}`,
     [auth0Id, email, name, avatarUrl]
   );
   return rows[0];
 }
 
-module.exports = { findByAuth0Id, findById, findByEmail, create, update, findAll, findOrCreate };
+module.exports = { findById, update, findAll, findOrCreate };
