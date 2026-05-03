@@ -6412,3 +6412,93 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
   0%, 100% { box-shadow: 0 0 0 2px rgba(255, 69, 58, 0.35); }
   50%      { box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); }
 }
+
+/* ====================================================================
+   Calendar page — compact mobile header (everything above the fold)
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* Single horizontal row for the entire top: small title on the left,
+     prev/today/next + "+" on the right. Eyebrow + year + stats hide. */
+  .cal-page { padding-top: 6px !important; }
+
+  .cal-page-head {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  .cal-page-eyebrow { display: none !important; }
+  .cal-page-year { display: none !important; }
+  .cal-page-headline {
+    flex: 1;
+    min-width: 0;
+  }
+  .cal-page-title {
+    font-size: 18px !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    /* Drop the gradient-clip on mobile — it eats sub-pixel rendering at
+       small sizes and looks dim. Solid text is sharper. */
+    background: none !important;
+    -webkit-text-fill-color: var(--text) !important;
+    color: var(--text) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cal-page-controls {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    gap: 6px !important;
+    justify-content: flex-end !important;
+  }
+
+  /* Smaller nav-group + Today button so they all fit on one line */
+  .cal-nav-group {
+    padding: 2px !important;
+    gap: 0 !important;
+    flex: 0 0 auto !important;
+  }
+  .cal-nav-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .cal-nav-btn svg { width: 16px; height: 16px; }
+  .cal-today-btn {
+    height: 30px !important;
+    padding: 0 11px !important;
+    font-size: 12px !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* + New task → icon-only round button on mobile */
+  .cal-new-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 50%;
+    flex: 0 0 auto !important;
+    justify-content: center;
+  }
+  .cal-new-btn span { display: none; }
+  .cal-new-btn svg { margin: 0; width: 18px; height: 18px; }
+
+  /* Hide the bigger 4-stat row — info redundant with the visible day strip */
+  .cal-stats { display: none !important; }
+  .cal-page-hint { display: none !important; }
+
+  /* Inner calendar card: zero vertical breathing on mobile so the grid
+     gets every available pixel. The component header is already hidden
+     via .week-cal.is-mobile .dash-card-head { display: none }. */
+  .week-cal { padding: 8px 8px 10px !important; margin: 0 !important; }
+  .week-cal-strip { padding: 4px 2px 8px !important; margin-top: 0 !important; }
+
+  /* Calculate the scroll height so the grid fills everything below the
+     compact header + day strip + tab bar without page-level scroll. */
+  .week-cal-scroll {
+    max-height: calc(100dvh - 56px - 70px - 64px - env(safe-area-inset-bottom, 0)) !important;
+    min-height: 360px;
+  }
+}
