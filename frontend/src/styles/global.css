@@ -6905,3 +6905,105 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
   /* Legend wraps cleanly */
   .gp-board-legend { gap: 10px 14px; padding-top: 10px; font-size: 10px; }
 }
+
+/* ====================================================================
+   Landing page mobile polish — keep desktop exactly as it was, just
+   stop "Together." from getting cropped + tighten section spacing.
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* The SVG viewBox is 1600x900 (landscape). On a portrait phone the
+     sides crop hard, so a 200 px-tall word gets clipped at the edges.
+     Smaller font keeps the whole word visible inside the visible slice. */
+  .mask-hero { height: 150vh !important; }
+  .mask-word {
+    font-size: 130px !important;
+    letter-spacing: -4px !important;
+  }
+  .mask-sub {
+    bottom: 14vh !important;
+    width: 88vw !important;
+  }
+  .mask-subtitle { font-size: 1rem !important; }
+  .scroll-hint { font-size: 0.7rem; bottom: 22px; }
+
+  /* Statement sections — tighter padding so "Plan, track, finish…"
+     doesn't eat 90% of the screen height */
+  .statement { padding: 80px 20px 70px !important; }
+  .statement-text { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+
+  /* Bento — already stacks; just tighten gaps and tile heights */
+  .bento {
+    padding: 0 14px 60px !important;
+    gap: 14px !important;
+  }
+  .tile, .tile-wide {
+    min-height: 320px !important;
+    padding: 24px 22px 0 !important;
+    border-radius: 22px;
+  }
+  .tile-title { font-size: clamp(1.2rem, 5vw, 1.6rem) !important; }
+
+  /* CTA section bottom padding too generous on phones */
+  .cta { padding: 70px 22px 90px !important; }
+  .cta-title { font-size: clamp(1.8rem, 7vw, 2.6rem); }
+  .cta-subtitle { font-size: 0.95rem; }
+
+  /* Stats strip — better wrap on narrow */
+  .stats {
+    padding: 40px 22px !important;
+    gap: 22px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-around;
+  }
+  .stat-num { font-size: clamp(1.6rem, 8vw, 2.2rem); }
+  .stat-label { font-size: 0.75rem; }
+
+  /* Hero hero (top) — smaller brand + actions + lede */
+  .hero-brand { font-size: clamp(2.5rem, 12vw, 4rem); }
+  .hero-typed { font-size: clamp(1.2rem, 5vw, 1.6rem); }
+  .hero-lede {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 0 18px;
+  }
+  .hero-actions { gap: 10px; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary {
+    padding: 12px 22px;
+    font-size: 0.95rem;
+  }
+  .hero-note { font-size: 0.75rem; padding: 0 16px; }
+
+  /* Ease grid (the "Everything hard, made easy" cards) */
+  .ease { padding: 60px 18px 70px; }
+  .ease-heading { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+  .ease-text { font-size: 0.95rem; }
+  .ease-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+  .ease-card { padding: 22px 20px; }
+  .ease-title { font-size: 1.05rem; }
+  .ease-desc { font-size: 0.9rem; }
+
+  .footer { padding: 32px 20px; gap: 8px 14px; flex-wrap: wrap; font-size: 0.75rem; }
+}
+
+/* Even narrower phones: shrink Together. further so it never touches edges */
+@media (max-width: 480px) {
+  .mask-hero { height: 140vh !important; }
+  .mask-word {
+    font-size: 100px !important;
+    letter-spacing: -2px !important;
+  }
+}
+
+/* Tall, narrow tablet portraits (iPad Mini, Surface Duo) — between
+   touchscreen + desktop. Use a middle font-size so the word stays whole. */
+@media (min-width: 721px) and (max-width: 900px) and (orientation: portrait) {
+  .mask-word {
+    font-size: 170px;
+    letter-spacing: -8px;
+  }
+}
