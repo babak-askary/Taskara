@@ -84,8 +84,11 @@ async function deleteAttachment(req, res, next) {
       try {
         await cloudinaryService.destroy(att.public_id, att.resource_type || 'image');
       } catch (cloudErr) {
-        // Cloudinary failure shouldn't strand the DB row — log and continue.
+        // Don't orphan the DB row by silently dropping the file in storage.
+        // Surface the failure so the client can retry — the operation is idempotent
+        // (the attachment row stays until storage actually clears).
         console.error('[attachment] cloudinary destroy failed', cloudErr.message);
+        return res.status(502).json({ message: 'Could not remove file from storage; please try again.' });
       }
     }
 
