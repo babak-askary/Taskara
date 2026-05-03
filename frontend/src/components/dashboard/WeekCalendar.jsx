@@ -96,7 +96,41 @@ function WeekCalendar({ tasks, loading, weekStart, onSlotPick, draft, onTaskUpda
   const daysRef = useRef(days);
   useEffect(() => { daysRef.current = days; }, [days]);
 
+  // Long-press infrastructure. On phones (no double-click / no right-click)
+  // a 480 ms hold is the universal "open menu" gesture. We track it with a
+  // single ref and synced timer so the existing drag/click logic can flip it
+  // off on movement or pointerup.
+  const LONG_PRESS_MS = 480;
+  const longPressRef = useRef(null);
+
+  const cancelLongPress = () => {
+    const lp = longPressRef.current;
+    if (!lp) return;
+    clearTimeout(lp.timerId);
+    if (lp.element) lp.element.classList.remove('is-long-pressing');
+    longPressRef.current = null;
+  };
+
+  const startLongPress = (kind, payload, element, fire) => {
+    cancelLongPress();
+    if (element) element.classList.add('is-long-pressing');
+    const timerId = setTimeout(() => {
+      const lp = longPressRef.current;
+      if (!lp || lp.timerId !== timerId) return;
+      if (lp.element) lp.element.classList.remove('is-long-pressing');
+      lp.fired = true;
+      // Light haptic if the device supports it (Android Chrome + some iOS
+      // contexts). No-op on devices that don't.
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(8); } catch {}
+      }
+      fire(payload);
+    }, LONG_PRESS_MS);
+    longPressRef.current = { kind, payload, element, timerId, fired: false };
+  };
+
   // Begin a drag — called from pointerdown on the task body or its handles.
+  // Also arms a long-press timer for mobile context-menu trigger.
   const startDrag = (e, task, mode) => {
     if (e.button !== 0) return; // left-click only
     e.preventDefault();
@@ -113,6 +147,21 @@ function WeekCalendar({ tasks, loading, weekStart, onSlotPick, draft, onTaskUpda
       currentDueIso: task.due_date,
       currentDuration: duration,
     });
+    // Only on the move handle (the task body itself), arm a long-press for
+    // edit. Resize handles don't make sense to long-press.
+    if (mode === 'move' && onTaskContextMenu) {
+      const x = e.clientX;
+      const y = e.clientY;
+      const el = e.currentTarget;
+      startLongPress('task-edit', { task, anchor: { x, y } }, el, ({ task, anchor }) => {
+        // Cancel the in-flight drag so the pointerup handler doesn't
+        // navigate to the task or save a no-op update.
+        setDrag(null);
+        // Resolve the underlying seed task if this is a virtual occurrence.
+        const seed = task._virtual ? tasks.find((x) => x.id === task.id) || task : task;
+        onTaskContextMenu(seed, anchor);
+      });
+    }
   };
 
   // While drag is active, listen on window so the pointer can leave the task
@@ -126,6 +175,9 @@ function WeekCalendar({ tasks, loading, weekStart, onSlotPick, draft, onTaskUpda
       if (!d) return;
       const dx = e.clientX - d.startX;
       const dy = e.clientY - d.startY;
+      // Any real movement cancels a pending long-press — the user is dragging,
+      // not holding still.
+      if (Math.hypot(dx, dy) >= 4) cancelLongPress();
       // Need a small threshold so an accidental jiggle on click doesn't trigger a move.
       if (!d.pointerMoved && Math.hypot(dx, dy) < 4) return;
 
@@ -203,10 +255,14 @@ function WeekCalendar({ tasks, loading, weekStart, onSlotPick, draft, onTaskUpda
     const onUp = async () => {
       const d = dragRef.current;
       if (!d) return;
+      // If a long-press already fired, the context menu took over — don't
+      // also navigate or save.
+      const lpFired = longPressRef.current?.fired;
+      cancelLongPress();
       // No real movement → treat as a click and open the task detail.
       if (!d.pointerMoved) {
         setDrag(null);
-        navigate(`/tasks/${d.taskId}`);
+        if (!lpFired) navigate(`/tasks/${d.taskId}`);
         return;
       }
       const changed =
@@ -427,12 +483,55 @@ function WeekCalendar({ tasks, loading, weekStart, onSlotPick, draft, onTaskUpda
                   onSlotPick(picked, { x: e.clientX, y: e.clientY });
                 };
 
+                // Long-press on an empty slot — mobile equivalent of
+                // double-click. We arm here, then a window listener cancels
+                // the timer if the finger moves (scroll) or lifts.
+                const slotPointerDown = (e) => {
+                  if (!onSlotPick) return;
+                  if (e.button !== 0) return;
+                  if (e.target.closest('.week-cal-task')) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const yIn = e.clientY - rect.top + e.currentTarget.scrollTop;
+                  const minutes = snapTo15((yIn / DAY_HEIGHT) * 1440);
+                  const picked = new Date(d);
+                  picked.setHours(0, 0, 0, 0);
+                  picked.setMinutes(minutes);
+                  const startX = e.clientX;
+                  const startY = e.clientY;
+                  startLongPress(
+                    'slot-create',
+                    { date: picked, anchor: { x: startX, y: startY } },
+                    null,
+                    ({ date, anchor }) => onSlotPick(date, anchor)
+                  );
+                  // Window-level cancel listeners — scroll or release aborts.
+                  const onAnyMove = (ev) => {
+                    if (Math.hypot(ev.clientX - startX, ev.clientY - startY) >= 6) {
+                      cancelLongPress();
+                      cleanup();
+                    }
+                  };
+                  const onAnyUp = () => {
+                    cancelLongPress();
+                    cleanup();
+                  };
+                  function cleanup() {
+                    window.removeEventListener('pointermove', onAnyMove);
+                    window.removeEventListener('pointerup', onAnyUp);
+                    window.removeEventListener('pointercancel', onAnyUp);
+                  }
+                  window.addEventListener('pointermove', onAnyMove);
+                  window.addEventListener('pointerup', onAnyUp);
+                  window.addEventListener('pointercancel', onAnyUp);
+                };
+
                 return (
                   <div
                     key={i}
                     data-day-idx={i}
                     className={`week-cal-col ${i === todayIdx ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''} ${onSlotPick ? 'is-pickable' : ''}`}
                     onDoubleClick={pickFromEvent}
+                    onPointerDown={slotPointerDown}
                   >
                     {Array.from({ length: 24 }, (_, h) => (
                       <div

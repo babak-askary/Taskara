@@ -6314,3 +6314,101 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
   color: #ff7590;
 }
 .more-sheet-logout .more-sheet-item-icon { color: #ff7590; }
+
+/* ====================================================================
+   Long-press visual feedback (mobile calendar)
+   ==================================================================== */
+
+/* On a task block: subtle scale + accent ring while held */
+.week-cal-task.is-long-pressing {
+  animation: lp-press 0.48s cubic-bezier(0.32, 0.72, 0.34, 1) forwards;
+}
+@keyframes lp-press {
+  0%   { transform: scale(1);   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+  60%  { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.4); }
+  100% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(10, 132, 255, 0.32), 0 12px 32px rgba(0, 0, 0, 0.5); }
+}
+
+/* ====================================================================
+   Calendar mobile polish — bigger pills, smoother day strip,
+   refined hour rail
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* Mobile day strip — wider pills, snappier scroll */
+  .week-cal-strip {
+    gap: 8px;
+    padding: 8px 4px 12px;
+  }
+  .week-cal-strip-day {
+    min-width: 60px;
+    padding: 11px 6px 9px;
+    border-radius: 16px;
+  }
+  .week-cal-strip-dow { font-size: 11px; }
+  .week-cal-strip-dnum { font-size: 19px; }
+  .week-cal-strip-day.is-selected {
+    box-shadow: 0 8px 20px rgba(10, 132, 255, 0.45);
+  }
+
+  /* Wider hour gutter on the single-day view so labels don't crowd */
+  .week-cal.is-mobile .week-cal-hour {
+    padding-right: 8px;
+    font-size: 10px;
+  }
+  .week-cal.is-mobile .week-cal-hour span {
+    right: 6px;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  /* Make task blocks easier to tap — bigger min height + bigger inner text */
+  .week-cal.is-mobile .week-cal-task {
+    left: 8px;
+    right: 8px;
+    border-radius: 12px;
+    padding: 7px 10px 7px 11px;
+    font-size: 12px;
+  }
+  .week-cal.is-mobile .week-cal-task-time { font-size: 11px; }
+  .week-cal.is-mobile .week-cal-task-title { font-size: 12px; }
+
+  /* The drag/resize handles are clutter on touch — hide them. Long-press
+     opens edit; drag still works on the body for power users. */
+  .week-cal.is-mobile .week-cal-task-handle { display: none; }
+
+  /* Hour grid scrolls smoother; show the now-line bigger */
+  .week-cal-now-dot { width: 14px; height: 14px; left: -7px; top: -6px; }
+  .week-cal-now::before { height: 2.5px; }
+
+  /* Slightly more padding around the calendar card content */
+  .week-cal-scroll {
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  /* Make page header tighter on phones so calendar grid gets more room */
+  .cal-page-head { gap: 12px; margin-bottom: 14px; }
+  .cal-page-eyebrow { margin: 0 0 6px; }
+  .cal-page-year { font-size: 12px; }
+  .cal-stats { padding: 12px 14px; border-radius: 14px; margin-bottom: 12px; }
+
+  /* Disable text selection inside the grid so long-press doesn't pop the
+     iOS text callout */
+  .week-cal-grid, .week-cal-strip, .week-cal-day-header,
+  .week-cal-col, .week-cal-cell, .week-cal-task {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Pulse hint near the now-line on the mobile single-day view */
+@media (max-width: 720px) {
+  .week-cal.is-mobile .week-cal-now-dot {
+    animation: now-dot-pulse 1.8s ease-in-out infinite;
+  }
+}
+@keyframes now-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 69, 58, 0.35); }
+  50%      { box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); }
+}
