@@ -5,6 +5,8 @@ import { getStats, getPerformance } from '../api/dashboardApi';
 import { getTasks, searchTasks } from '../api/taskApi';
 import { ask as askAI } from '../api/aiApi';
 import apiClient, { errorMessage } from '../api/client';
+import { fmtDate, fmtShort, isToday, isOverdue } from '../utils/dateFormat';
+import { useDebounce } from '../hooks/useDebounce';
 
 const SUGGESTIONS = [
   'What should I focus on today?',
@@ -27,24 +29,6 @@ function firstName(user) {
   return s.split(/[\s@]/)[0];
 }
 
-function fmtDate(date = new Date()) {
-  return date.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  return new Date(dateStr).toDateString() === new Date().toDateString();
-}
-
-function isOverdue(dateStr, status) {
-  if (!dateStr || status === 'done') return false;
-  return new Date(dateStr) < new Date();
-}
-
 function DashboardPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth0();
 
@@ -57,7 +41,7 @@ function DashboardPage() {
   const [loadError, setLoadError] = useState(null);
 
   const [searchInput, setSearchInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchTerm = useDebounce(searchInput.trim(), 300);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [taskMatches, setTaskMatches] = useState([]);
@@ -67,11 +51,6 @@ function DashboardPage() {
   const [aiAnswer, setAiAnswer] = useState(null);
   const [aiPending, setAiPending] = useState(false);
   const [aiError, setAiError] = useState(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setSearchTerm(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -324,12 +303,7 @@ function DashboardPage() {
                         <span className={`dash-task-bar pri-${t.priority || 'low'}`} />
                         <span className="dash-task-title">{t.title}</span>
                         <span className="dash-task-due">
-                          {t.due_date
-                            ? new Date(t.due_date).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                              })
-                            : 'No date'}
+                          {t.due_date ? fmtShort(t.due_date) : 'No date'}
                         </span>
                       </Link>
                     </li>
@@ -480,12 +454,7 @@ function DashboardPage() {
                     <span
                       className={`dash-task-due ${overdue ? 'is-overdue' : today ? 'is-today' : ''}`}
                     >
-                      {t.due_date
-                        ? new Date(t.due_date).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })
-                        : 'No date'}
+                      {t.due_date ? fmtShort(t.due_date) : 'No date'}
                     </span>
                   </Link>
                 </li>

@@ -12,37 +12,9 @@ import { getCategories } from '../api/categoryApi';
 import apiClient, { errorMessage } from '../api/client';
 import { onSocketEvent } from '../services/socket';
 import DueDatePicker from '../components/common/DueDatePicker';
-
-const STATUS_CHIPS = [
-  { value: '', label: 'All' },
-  { value: 'todo', label: 'To do' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'done', label: 'Done' },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: '', label: 'All priorities' },
-  { value: 'high', label: 'High priority' },
-  { value: 'medium', label: 'Medium priority' },
-  { value: 'low', label: 'Low priority' },
-];
-
-const SORT_OPTIONS = [
-  { value: 'due_date:ASC', label: 'Due date' },
-  { value: 'created_at:DESC', label: 'Newest' },
-  { value: 'created_at:ASC', label: 'Oldest' },
-  { value: 'title:ASC', label: 'Title A–Z' },
-];
-
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  return new Date(dateStr).toDateString() === new Date().toDateString();
-}
-
-function isOverdue(dateStr, status) {
-  if (!dateStr || status === 'done') return false;
-  return new Date(dateStr) < new Date();
-}
+import { fmtShort, isToday, isOverdue } from '../utils/dateFormat';
+import { useDebounce } from '../hooks/useDebounce';
+import { STATUS_CHIPS, PRIORITY_OPTIONS, SORT_OPTIONS } from '../constants/taskOptions';
 
 function TasksPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
@@ -57,7 +29,7 @@ function TasksPage() {
   const [categoryId, setCategoryId] = useState('');
   const [sort, setSort] = useState('due_date:ASC');
   const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const search = useDebounce(searchInput.trim(), 300);
   const [people, setPeople] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
   const [peopleError, setPeopleError] = useState(null);
@@ -66,12 +38,6 @@ function TasksPage() {
   const [adding, setAdding] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pendingTitle, setPendingTitle] = useState('');
-
-  // Debounce search
-  useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
 
   // Categories (loaded once)
   useEffect(() => {
@@ -233,7 +199,6 @@ function TasksPage() {
     setPriority('');
     setCategoryId('');
     setSearchInput('');
-    setSearch('');
   }
 
   if (authLoading) return <div className="loading">Loading...</div>;
@@ -514,12 +479,7 @@ function TaskRow({ task, onToggle, onDelete }) {
               : ''
           }`}
         >
-          {task.due_date
-            ? new Date(task.due_date).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-              })
-            : 'No date'}
+          {task.due_date ? fmtShort(task.due_date) : 'No date'}
         </span>
       </div>
 
