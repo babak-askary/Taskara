@@ -6,7 +6,6 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailPage from './pages/TaskDetailPage';
-import ProfilePage from './pages/ProfilePage';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
