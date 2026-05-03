@@ -1,8 +1,9 @@
 const pool = require('../config/db');
 
-// SELECT a comment with author info joined. Used by create + findByTaskId.
+const COMMENT_COLUMNS = 'c.id, c.task_id, c.user_id, c.content, c.created_at';
+
 const SELECT_WITH_AUTHOR = `
-  SELECT c.*,
+  SELECT ${COMMENT_COLUMNS},
          u.name       AS author_name,
          u.email      AS author_email,
          u.avatar_url AS author_avatar
@@ -35,7 +36,10 @@ async function findByTaskId(taskId, { limit = 100, offset = 0 } = {}) {
 }
 
 async function findById(id) {
-  const { rows } = await pool.query('SELECT * FROM comments WHERE id = $1', [id]);
+  const { rows } = await pool.query(
+    'SELECT id, task_id, user_id, content, created_at FROM comments WHERE id = $1',
+    [id]
+  );
   return rows[0] || null;
 }
 
