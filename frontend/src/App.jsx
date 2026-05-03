@@ -6,20 +6,25 @@ import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import NotFound from './pages/NotFound';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 function App() {
   return (
     <>
       <AuthSetup />
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="tasks/:id" element={<TaskDetailPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-        </Route>
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="tasks/:id" element={<TaskDetailPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </ErrorBoundary>
     </>
   );
 }

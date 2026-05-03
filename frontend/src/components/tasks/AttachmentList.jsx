@@ -5,6 +5,7 @@ import {
   uploadAttachment,
   deleteAttachment,
 } from '../../api/attachmentApi';
+import { useToast } from '../../hooks/useToast';
 
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '';
@@ -23,6 +24,7 @@ function isImage(mime) {
 }
 
 function AttachmentList({ taskId, canEdit, currentUserEmail }) {
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -74,7 +76,7 @@ function AttachmentList({ taskId, canEdit, currentUserEmail }) {
       await deleteAttachment(taskId, att.id);
     } catch (err) {
       setItems(before);
-      alert(errorMessage(err, 'Could not delete attachment.'));
+      toast.error(errorMessage(err, 'Could not delete attachment.'));
     }
   }
 

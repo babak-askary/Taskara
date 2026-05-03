@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -51,6 +52,8 @@ function DueDatePicker({ isOpen, taskTitle, onConfirm, onSkip, onClose }) {
   const [viewDate, setViewDate] = useState(today);
   const [selected, setSelected] = useState(null);
   const [time, setTime] = useState('17:00');
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, isOpen);
 
   // Reset state each time the modal opens
   useEffect(() => {
@@ -115,8 +118,16 @@ function DueDatePicker({ isOpen, taskTitle, onConfirm, onSkip, onClose }) {
     : 'Pick a date';
 
   return (
-    <div className="ddp-overlay" onMouseDown={onClose} role="dialog" aria-modal="true">
-      <div className="ddp-modal" onMouseDown={(e) => e.stopPropagation()}>
+    <div className="ddp-overlay" onMouseDown={onClose} role="dialog" aria-modal="true" aria-label="Set due date">
+      <div className="ddp-modal" ref={modalRef} onMouseDown={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          className="ddp-close"
+          onClick={onClose}
+          aria-label="Close due date picker"
+        >
+          ×
+        </button>
         <header className="ddp-header">
           <p className="ddp-eyebrow">Due date</p>
           <h3 className="ddp-title">{taskTitle || 'New task'}</h3>
