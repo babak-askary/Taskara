@@ -6659,3 +6659,71 @@ body.week-cal-dragging .week-cal-task { cursor: grabbing; }
 /* The compact rules in the previous block can stay — these `!important`
    later rules win where they conflict, but specific values like the
    30 px nav button and icon-only "+" button are now unified here. */
+
+/* ====================================================================
+   Chat mobile — locked viewport, only the message list scrolls.
+   Mirrors the calendar approach for a consistent native-app feel.
+   ==================================================================== */
+
+@media (max-width: 720px) {
+  /* Page fills the viewport, stops above the tab bar. No page scroll. */
+  .chat-page {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0));
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Layout fills the page; no calc'd height needed now that the parent
+     is viewport-fixed. */
+  .chat-layout {
+    height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: var(--bg) !important;
+  }
+
+  /* Sidebar in single-pane mode = full chat layout */
+  .chat-side {
+    height: 100%;
+    overflow-y: auto;
+    padding: 14px 14px 14px;
+  }
+
+  .chat-main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .chat-thread-head {
+    flex: 0 0 auto;
+    /* Header is part of the flex column now — sticky no longer needed
+       since nothing above scrolls. Keep the blur for visual continuity
+       when the user scrolls messages. */
+    position: relative !important;
+  }
+
+  .chat-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 12px;
+  }
+
+  .chat-input-row {
+    flex: 0 0 auto;
+    position: relative !important;
+    bottom: auto !important;
+    /* Account for inner padding only; bottom safe-area is already
+       reserved by the .chat-page's bottom: tab-bar + safe-area. */
+    padding: 10px 12px !important;
+  }
+}
