@@ -24,7 +24,10 @@
 
 html { -webkit-text-size-adjust: 100%; }
 html, body, #root { min-height: 100%; }
-html, body { overflow-x: hidden; }
+/* `overflow-x: clip` (not hidden) — `hidden` on html/body breaks
+   `position: sticky` in Safari and some Firefox builds. `clip` prevents
+   the horizontal scrollbar without creating a scroll container. */
+html, body { overflow-x: clip; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
@@ -423,7 +426,12 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 
 .mask-hero {
   position: relative;
-  height: 260vh;
+  /* 200vh = 100vh sticky stage + 100vh of scroll for the animation.
+     The animation runs across 0..1 of the non-sticky portion, so this
+     gives the effect a tight "no gap" feel — when the user reaches p=1
+     the next section appears almost immediately. (Was 260vh, which left
+     ~100vh of scrolling-out showing the same final frame.) */
+  height: 200vh;
   background: #000;
 }
 
@@ -3367,8 +3375,8 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
   .tasks { padding: 32px 22px 70px; }
   .td { padding: 28px 22px 70px; }
 
-  .mask-word { font-size: 200px; letter-spacing: -10px; }
-  .mask-hero { height: 220vh; }
+  .mask-word { font-size: 180px; letter-spacing: -8px; }
+  .mask-hero { height: 180vh; }
 
   .bento { padding: 0 18px 100px; }
   .stats { padding: 70px 28px; gap: 28px; }
@@ -3451,8 +3459,8 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
     padding: 10px 16px;
   }
 
-  .mask-hero { height: 160vh; }
-  .mask-word { font-size: 180px; letter-spacing: -8px; }
+  .mask-hero { height: 150vh; }
+  .mask-word { font-size: 150px; letter-spacing: -6px; }
   .mask-reveal { bottom: 10vh; }
   .statement { padding: 120px 22px 90px; }
   .bento { grid-template-columns: 1fr; padding: 0 14px 80px; }
