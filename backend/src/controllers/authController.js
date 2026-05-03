@@ -1,42 +1,24 @@
 const userModel = require('../models/userModel');
 
-// Sync Auth0 user to our database on register
-async function register(req, res, next) {
+// Sync the Auth0 identity into our local users table. Called by both /register
+// (first time, returns 201) and /login (returning user, returns 200).
+async function syncUser(req, res, next, status) {
   try {
     const { email, name, picture } = req.body;
-    const auth0Id = req.user.auth0_id;
-
     const user = await userModel.findOrCreate({
-      auth0Id,
+      auth0Id: req.user.auth0_id,
       email: email || req.user.email,
       name: name || req.user.name || email,
       avatarUrl: picture || req.user.avatar_url || null,
     });
-
-    res.status(201).json(user);
+    res.status(status).json(user);
   } catch (err) {
     next(err);
   }
 }
 
-// Sync Auth0 user to our database on login
-async function login(req, res, next) {
-  try {
-    const { email, name, picture } = req.body;
-    const auth0Id = req.user.auth0_id;
-
-    const user = await userModel.findOrCreate({
-      auth0Id,
-      email: email || req.user.email,
-      name: name || req.user.name || email,
-      avatarUrl: picture || req.user.avatar_url || null,
-    });
-
-    res.json(user);
-  } catch (err) {
-    next(err);
-  }
-}
+const register = (req, res, next) => syncUser(req, res, next, 201);
+const login    = (req, res, next) => syncUser(req, res, next, 200);
 
 // Return the current user's profile from our database
 async function getProfile(req, res, next) {

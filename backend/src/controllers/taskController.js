@@ -1,6 +1,8 @@
 const taskModel = require('../models/taskModel');
 const commentModel = require('../models/commentModel');
 const notificationService = require('../services/notificationService');
+const { RULES: RECURRENCE_RULES, isValidRule, nextDueDate } = require('../utils/recurrence');
+const parseId = require('../utils/parseId');
 
 const STATUSES = ['todo', 'in_progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -24,6 +26,10 @@ function validateTask(body, partial = false) {
   }
   if (body.due_date && isNaN(Date.parse(body.due_date))) {
     errors.push('due_date must be a valid date');
+  }
+  if (body.recurrence_rule !== undefined && body.recurrence_rule !== null
+      && body.recurrence_rule !== '' && !isValidRule(body.recurrence_rule)) {
+    errors.push(`recurrence_rule must be one of: ${RECURRENCE_RULES.join(', ')}`);
   }
   return errors;
 }
@@ -54,13 +60,13 @@ async function getAllTasks(req, res, next) {
       userId: req.user.id,
       status,
       priority,
-      categoryId: category_id ? parseInt(category_id) : undefined,
+      categoryId: category_id ? parseInt(category_id, 10) : undefined,
       dueBefore: due_before,
       dueAfter: due_after,
       sortBy: sort_by,
       sortOrder: sort_order,
-      limit: limit ? parseInt(limit) : 50,
-      offset: offset ? parseInt(offset) : 0,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
     });
     res.json(tasks);
   } catch (err) {
@@ -70,7 +76,9 @@ async function getAllTasks(req, res, next) {
 
 async function getTaskById(req, res, next) {
   try {
-    const task = await taskModel.findById(parseInt(req.params.id), req.user.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
+    const task = await taskModel.findById(taskId, req.user.id);
     if (!task) return res.status(404).json({ message: 'Task not found or no access' });
     res.json(task);
   } catch (err) {
@@ -80,16 +88,44 @@ async function getTaskById(req, res, next) {
 
 async function updateTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     const canEdit = await taskModel.isOwnerOrEditor(taskId, req.user.id);
     if (!canEdit) return res.status(403).json({ message: 'No permission to edit' });
 
     const errors = validateTask(req.body, true);
     if (errors.length) return res.status(400).json({ errors });
 
+    const before = await taskModel.findById(taskId, req.user.id);
     const updated = await taskModel.update(taskId, req.body);
     notificationService.notifyTaskUpdate(updated);
-    res.json(updated);
+
+    // If a recurring task just transitioned to "done", spawn the next instance
+    let spawned = null;
+    if (
+      before &&
+      before.is_recurring &&
+      isValidRule(before.recurrence_rule) &&
+      before.status !== 'done' &&
+      req.body.status === 'done'
+    ) {
+      const anchor = before.due_date ? new Date(before.due_date) : new Date();
+      const nextDate = nextDueDate(before.recurrence_rule, anchor);
+      if (nextDate) {
+        spawned = await taskModel.create(before.owner_id, {
+          title: before.title,
+          description: before.description,
+          priority: before.priority,
+          category_id: before.category_id,
+          is_recurring: true,
+          recurrence_rule: before.recurrence_rule,
+          estimated_time: before.estimated_time,
+          due_date: nextDate.toISOString(),
+        });
+      }
+    }
+
+    res.json(spawned ? { ...updated, spawned } : updated);
   } catch (err) {
     next(err);
   }
@@ -97,7 +133,8 @@ async function updateTask(req, res, next) {
 
 async function deleteTask(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.isOwner(taskId, req.user.id))) {
       return res.status(403).json({ message: 'Only the owner can delete' });
     }
@@ -117,9 +154,9 @@ async function searchTasks(req, res, next) {
       userId: req.user.id,
       status,
       priority,
-      categoryId: category_id ? parseInt(category_id) : undefined,
-      limit: limit ? parseInt(limit) : 50,
-      offset: offset ? parseInt(offset) : 0,
+      categoryId: category_id ? parseInt(category_id, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
     });
     res.json(tasks);
   } catch (err) {
@@ -129,7 +166,8 @@ async function searchTasks(req, res, next) {
 
 async function addComment(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     const { content } = req.body;
 
     if (!content || typeof content !== 'string' || !content.trim()) {
@@ -157,13 +195,14 @@ async function addComment(req, res, next) {
 
 async function getComments(req, res, next) {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseId(req.params.id);
+    if (taskId === null) return res.status(400).json({ message: 'Invalid task id' });
     if (!(await taskModel.hasAccess(taskId, req.user.id))) {
       return res.status(403).json({ message: 'No access to this task' });
     }
     const comments = await commentModel.findByTaskId(taskId, {
-      limit: req.query.limit ? parseInt(req.query.limit) : 100,
-      offset: req.query.offset ? parseInt(req.query.offset) : 0,
+      limit: req.query.limit ? parseInt(req.query.limit, 10) : 100,
+      offset: req.query.offset ? parseInt(req.query.offset, 10) : 0,
     });
     res.json(comments);
   } catch (err) {
@@ -173,7 +212,8 @@ async function getComments(req, res, next) {
 
 async function deleteComment(req, res, next) {
   try {
-    const commentId = parseInt(req.params.commentId);
+    const commentId = parseId(req.params.commentId);
+    if (commentId === null) return res.status(400).json({ message: 'Invalid comment id' });
     const comment = await commentModel.findById(commentId);
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
     if (comment.user_id !== req.user.id) {

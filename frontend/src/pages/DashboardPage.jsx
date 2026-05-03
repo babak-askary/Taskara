@@ -1,17 +1,11 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { getStats, getPerformance } from '../api/dashboardApi';
-import { getTasks, searchTasks } from '../api/taskApi';
-import { ask as askAI } from '../api/aiApi';
-import apiClient, { errorMessage } from '../api/client';
-
-const SUGGESTIONS = [
-  'What should I focus on today?',
-  'Summarize my week',
-  "What's overdue?",
-  'Show my top categories',
-];
+import { fmtDate, fmtShort, isToday, isOverdue } from '../utils/dateFormat';
+import { useDashboardData } from '../hooks/useDashboardData';
+import StatCards from '../components/dashboard/StatCards';
+import SearchPanel from '../components/dashboard/SearchPanel';
+import AIAssistant from '../components/dashboard/AIAssistant';
 
 function greetingFor(date = new Date()) {
   const h = date.getHours();
@@ -27,122 +21,9 @@ function firstName(user) {
   return s.split(/[\s@]/)[0];
 }
 
-function fmtDate(date = new Date()) {
-  return date.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  return new Date(dateStr).toDateString() === new Date().toDateString();
-}
-
-function isOverdue(dateStr, status) {
-  if (!dateStr || status === 'done') return false;
-  return new Date(dateStr) < new Date();
-}
-
 function DashboardPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth0();
-
-  const [stats, setStats] = useState(null);
-  const [perf, setPerf] = useState(null);
-  const [trend, setTrend] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
-
-  const [searchInput, setSearchInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState(null);
-  const [taskMatches, setTaskMatches] = useState([]);
-  const [userMatches, setUserMatches] = useState([]);
-
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiAnswer, setAiAnswer] = useState(null);
-  const [aiPending, setAiPending] = useState(false);
-  const [aiError, setAiError] = useState(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setSearchTerm(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
-      setLoadError(null);
-      try {
-        const [s, p, t] = await Promise.all([getStats(), getPerformance(), getTasks()]);
-        if (cancelled) return;
-        setStats(s.data.stats);
-        setCategories(s.data.category_breakdown || []);
-        setPerf(p.data.metrics);
-        setTrend(p.data.trend || []);
-        setTasks(t.data || []);
-      } catch (err) {
-        if (!cancelled) {
-          setLoadError(errorMessage(err, 'Could not load your dashboard.'));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (!searchTerm) {
-      setTaskMatches([]);
-      setUserMatches([]);
-      setSearchError(null);
-      setSearching(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      setSearching(true);
-      setSearchError(null);
-      try {
-        const [taskRes, userRes] = await Promise.all([
-          searchTasks({ q: searchTerm, limit: 8 }),
-          apiClient.get('/users', { params: { search: searchTerm, limit: 8 } }),
-        ]);
-
-        if (cancelled) return;
-
-        const users = (userRes.data || []).filter((u) => {
-          if (!user?.email) return true;
-          return u.email !== user.email;
-        });
-
-        setTaskMatches(taskRes.data || []);
-        setUserMatches(users);
-      } catch (err) {
-        if (!cancelled) {
-          setSearchError(errorMessage(err, 'Search is unavailable right now.'));
-          setTaskMatches([]);
-          setUserMatches([]);
-        }
-      } finally {
-        if (!cancelled) setSearching(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [isAuthenticated, searchTerm, user?.email]);
+  const { stats, categories, perf, trend, tasks, loading, error: loadError } = useDashboardData(isAuthenticated);
 
   const upNext = useMemo(() => {
     return tasks
@@ -170,35 +51,6 @@ function DashboardPage() {
     }));
   }, [trend]);
 
-  async function submitAI(prompt) {
-    const p = (prompt ?? aiPrompt).trim();
-    if (!p || aiPending) return;
-    setAiError(null);
-    setAiAnswer(null);
-    setAiPending(true);
-    try {
-      const { data } = await askAI(p);
-      setAiAnswer(data);
-    } catch (err) {
-      console.error('[ai ask]', err);
-      setAiError(errorMessage(err, 'Taskara AI is not available right now.'));
-    } finally {
-      setAiPending(false);
-    }
-  }
-
-  function handleChip(text) {
-    setAiPrompt(text);
-    submitAI(text);
-  }
-
-  function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      submitAI();
-    }
-  }
-
   if (authLoading) return <div className="loading">Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
@@ -213,180 +65,11 @@ function DashboardPage() {
         <p className="dash-subtitle">Here's what's happening in your workspace.</p>
       </header>
 
-      {/* AI Assistant */}
-      <section className="ai-panel">
-        <div className="ai-head">
-          <div className="ai-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" fill="currentColor" stroke="none" />
-              <path d="M19 15l.7 2.1L22 18l-2.3.9L19 21l-.7-2.1L16 18l2.3-.9L19 15z" fill="currentColor" stroke="none" opacity="0.8" />
-            </svg>
-          </div>
-          <div className="ai-head-text">
-            <p className="ai-title">Ask Taskara</p>
-            <p className="ai-sub">Quick answers about your tasks, your week, what to focus on.</p>
-          </div>
-        </div>
+      <AIAssistant />
+      <SearchPanel currentUserEmail={user?.email} />
 
-        <div className="ai-input-row">
-          <input
-            className="ai-input"
-            type="text"
-            placeholder="Ask anything — e.g. What should I do next?"
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-            onKeyDown={onKeyDown}
-            disabled={aiPending}
-          />
-          <button
-            className="ai-send"
-            onClick={() => submitAI()}
-            disabled={aiPending || !aiPrompt.trim()}
-            aria-label="Send"
-          >
-            {aiPending ? <span className="ai-spinner" aria-hidden="true" /> : 'Ask'}
-          </button>
-        </div>
+      <StatCards loading={loading} dueToday={dueToday} stats={stats} perf={perf} />
 
-        <div className="ai-chips">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              className="ai-chip"
-              onClick={() => handleChip(s)}
-              disabled={aiPending}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        {aiError && <p className="ai-error">{aiError}</p>}
-        {aiAnswer && (
-          <div className="ai-answer">
-            <div className="ai-answer-text">{aiAnswer.reply}</div>
-            <div className="ai-answer-meta">
-              <span className="ai-answer-dot" />
-              {aiAnswer.source === 'anthropic' ? 'Claude' : 'Taskara helper'}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Stat cards */}
-      <section className="dash-card">
-        <header className="dash-card-head dash-card-head-row">
-          <div>
-            <p className="dash-card-eyebrow">Search</p>
-            <h3 className="dash-card-title">Find tasks and people</h3>
-          </div>
-        </header>
-
-        <div className="tasks-search">
-          <svg
-            className="tasks-search-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            className="tasks-search-input"
-            type="search"
-            placeholder="Search tasks or people..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-        </div>
-
-        {searching && <p className="dash-empty">Searching...</p>}
-        {searchError && <p className="dash-empty dash-error">{searchError}</p>}
-
-        {!!searchTerm && !searching && !searchError && (
-          <div className="dash-grid">
-            <article className="dash-card">
-              <header className="dash-card-head">
-                <p className="dash-card-eyebrow">Tasks</p>
-                <h3 className="dash-card-title">Matching tasks</h3>
-              </header>
-              {taskMatches.length === 0 ? (
-                <p className="dash-empty">No task matches.</p>
-              ) : (
-                <ul className="dash-task-list">
-                  {taskMatches.map((t) => (
-                    <li key={t.id} className="dash-task-row">
-                      <Link to={`/tasks/${t.id}`} className="dash-task-link">
-                        <span className={`dash-task-bar pri-${t.priority || 'low'}`} />
-                        <span className="dash-task-title">{t.title}</span>
-                        <span className="dash-task-due">
-                          {t.due_date
-                            ? new Date(t.due_date).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                              })
-                            : 'No date'}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
-
-            <article className="dash-card">
-              <header className="dash-card-head">
-                <p className="dash-card-eyebrow">People</p>
-                <h3 className="dash-card-title">Matching users</h3>
-              </header>
-              {userMatches.length === 0 ? (
-                <p className="dash-empty">No people matches.</p>
-              ) : (
-                <ul className="dash-cat-list">
-                  {userMatches.map((u) => (
-                    <li key={u.id} className="dash-cat-row">
-                      <span className="dash-cat-dot" style={{ background: '#6b7280' }} />
-                      <span className="dash-cat-name">{u.name || 'Unnamed user'}</span>
-                      <span className="dash-cat-count">{u.email}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
-          </div>
-        )}
-      </section>
-
-      <section className="dash-stats">
-        <StatCard label="Due today" value={loading ? null : dueToday} accent="blue" />
-        <StatCard
-          label="Overdue"
-          value={loading ? null : stats?.overdue ?? 0}
-          accent={stats?.overdue > 0 ? 'red' : 'muted'}
-        />
-        <StatCard
-          label="Done this week"
-          value={loading ? null : perf?.completed_this_week ?? 0}
-          accent="green"
-          delta={
-            !loading && perf
-              ? (perf.completed_this_week ?? 0) - (perf.completed_last_week ?? 0)
-              : null
-          }
-        />
-        <StatCard
-          label="On-time rate"
-          value={loading ? null : `${perf?.on_time_rate ?? 0}%`}
-          accent="purple"
-        />
-      </section>
-
-      {/* Trend + Categories */}
       <section className="dash-grid">
         <article className="dash-card dash-card-wide">
           <header className="dash-card-head">
@@ -442,7 +125,6 @@ function DashboardPage() {
         </article>
       </section>
 
-      {/* Up next */}
       <section className="dash-card">
         <header className="dash-card-head dash-card-head-row">
           <div>
@@ -471,22 +153,12 @@ function DashboardPage() {
                     <span className={`dash-task-bar pri-${t.priority || 'low'}`} />
                     <span className="dash-task-title">{t.title}</span>
                     {t.category_name && (
-                      <span
-                        className="dash-task-cat"
-                        style={{ color: t.category_color || 'var(--text-dim)' }}
-                      >
+                      <span className="dash-task-cat" style={{ color: t.category_color || 'var(--text-dim)' }}>
                         {t.category_name}
                       </span>
                     )}
-                    <span
-                      className={`dash-task-due ${overdue ? 'is-overdue' : today ? 'is-today' : ''}`}
-                    >
-                      {t.due_date
-                        ? new Date(t.due_date).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })
-                        : 'No date'}
+                    <span className={`dash-task-due ${overdue ? 'is-overdue' : today ? 'is-today' : ''}`}>
+                      {t.due_date ? fmtShort(t.due_date) : 'No date'}
                     </span>
                   </Link>
                 </li>
@@ -495,23 +167,6 @@ function DashboardPage() {
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function StatCard({ label, value, accent, delta }) {
-  const isLoading = value === null || value === undefined;
-  return (
-    <div className={`dash-stat dash-stat-${accent}`}>
-      <p className="dash-stat-label">{label}</p>
-      <p className="dash-stat-value">
-        {isLoading ? <span className="dash-skel dash-skel-num" /> : value}
-      </p>
-      {typeof delta === 'number' && (
-        <p className={`dash-stat-delta ${delta > 0 ? 'up' : delta < 0 ? 'down' : ''}`}>
-          {delta > 0 ? `+${delta}` : delta} vs last week
-        </p>
-      )}
     </div>
   );
 }
