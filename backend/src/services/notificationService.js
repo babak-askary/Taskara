@@ -1,13 +1,13 @@
-const { getIO } = require('../sockets/socketManager');
+const { tryGetIO } = require('../sockets/socketManager');
 
-// Emit an event to a room. Only swallows the "not initialized" case
-// (happens during tests or before the HTTP server starts). All other
-// errors are logged so we can actually debug them.
+// Emit an event to a room. If socket.io hasn't started yet (boot / tests),
+// silently no-op via tryGetIO; any actual emit failure surfaces as a real error.
 function emit(room, event, data) {
+  const io = tryGetIO();
+  if (!io) return;
   try {
-    getIO().to(room).emit(event, data);
+    io.to(room).emit(event, data);
   } catch (err) {
-    if (err.message && err.message.includes('not initialized')) return;
     console.error('[notification] emit failed', { room, event, err: err.message });
   }
 }

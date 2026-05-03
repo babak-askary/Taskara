@@ -81,4 +81,10 @@ function getIO() {
   return io;
 }
 
-module.exports = { initializeSocket, getIO };
+// Returns the io instance or null if socket.io hasn't started yet (during
+// boot or in tests). Use this in fire-and-forget paths like notifications.
+function tryGetIO() {
+  return io || null;
+}
+
+module.exports = { initializeSocket, getIO, tryGetIO };
