@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -151,7 +151,7 @@ function ConvoSidebar({ conversations, selectedId, onSelect, onStartDirect, curr
   );
 }
 
-function ChatThread({ conversation, messages, currentUserEmail, onSend }) {
+function ChatThread({ conversation, messages, currentUserEmail, onSend, onBack }) {
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const scrollerRef = useRef(null);
@@ -215,6 +215,18 @@ function ChatThread({ conversation, messages, currentUserEmail, onSend }) {
   return (
     <main className="chat-main">
       <header className="chat-thread-head">
+        {onBack && (
+          <button
+            type="button"
+            className="chat-thread-back"
+            onClick={onBack}
+            aria-label="Back to conversations"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
         <span className="gp-avatar chat-thread-avatar" aria-hidden="true">
           {conversation.kind === 'direct' && conversation.other_user_avatar
             ? <img src={conversation.other_user_avatar} alt="" />
@@ -285,11 +297,28 @@ function ChatThread({ conversation, messages, currentUserEmail, onSend }) {
   );
 }
 
+// Single-pane mode on phones — show sidebar OR thread, not both. Like
+// iMessage/WhatsApp. The viewport listener uses matchMedia so it tracks the
+// breakpoint cheaply and recovers if the user rotates a tablet.
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(max-width: 720px)').matches
+  );
+  useLayoutEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isMobile;
+}
+
 function ChatPage() {
   const { id: routeId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth0();
   const toast = useToast();
+  const isMobile = useIsMobile();
 
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(routeId ? Number(routeId) : null);
@@ -417,30 +446,49 @@ function ChatPage() {
   if (authLoading) return <div className="loading">Loading…</div>;
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
-  return (
-    <div className="dash chat-page">
-      <header className="chat-page-head">
-        <p className="cal-page-eyebrow">
-          <span className="cal-page-eyebrow-dot" />
-          Chat
-        </p>
-        <h1 className="cal-page-title">Conversations</h1>
-      </header>
+  // On phones: render sidebar OR thread, not both. The two-column layout
+  // collapses to a stacked single pane that swaps on selection.
+  const showThread = !isMobile || !!selectedId;
+  const showSidebar = !isMobile || !selectedId;
 
-      <div className="chat-layout">
-        <ConvoSidebar
-          conversations={conversations}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onStartDirect={handleStartDirect}
-          currentUserEmail={user?.email}
-        />
-        <ChatThread
-          conversation={active}
-          messages={messages}
-          currentUserEmail={user?.email}
-          onSend={handleSend}
-        />
+  function handleBackToList() {
+    setSelectedId(null);
+    setActive(null);
+    setMessages([]);
+    navigate('/chat');
+  }
+
+  return (
+    <div className={`dash chat-page ${isMobile ? 'is-mobile' : ''}`}>
+      {!isMobile && (
+        <header className="chat-page-head">
+          <p className="cal-page-eyebrow">
+            <span className="cal-page-eyebrow-dot" />
+            Chat
+          </p>
+          <h1 className="cal-page-title">Conversations</h1>
+        </header>
+      )}
+
+      <div className={`chat-layout ${isMobile && selectedId ? 'on-thread' : ''}`}>
+        {showSidebar && (
+          <ConvoSidebar
+            conversations={conversations}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            onStartDirect={handleStartDirect}
+            currentUserEmail={user?.email}
+          />
+        )}
+        {showThread && (
+          <ChatThread
+            conversation={active}
+            messages={messages}
+            currentUserEmail={user?.email}
+            onSend={handleSend}
+            onBack={isMobile ? handleBackToList : null}
+          />
+        )}
       </div>
 
       {loading && conversations.length === 0 && (
